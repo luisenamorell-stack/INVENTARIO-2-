@@ -84,6 +84,15 @@ interface ScannedItem {
   systemStock: number;
   countedStock: number;
   lastScanned: number;
+  diferencia: number;
+  estado: 'cuadrado' | 'faltante' | 'sobrante';
+}
+
+interface ResumenConteo {
+  totalItems: number;
+  cuadrados: number;
+  faltantes: number;
+  sobrantes: number;
 }
 
 export default function ConteoPage() {
@@ -106,6 +115,7 @@ export default function ConteoPage() {
   const [unregisteredCodes, setUnregisteredCodes] = useState<string[]>([])
   const [lastScannedProduct, setLastScannedProduct] = useState<ScannedItem | null>(null)
   const [isApplying, setIsApplying] = useState(false)
+  const [filtro, setFiltro] = useState<'todos' | 'faltantes' | 'discrepancias'>('todos')
 
   // Fetch inventory for selected warehouse
   const inventoryQuery = useMemoFirebase(() => 
@@ -124,8 +134,10 @@ export default function ConteoPage() {
 
   const handleScan = useCallback((code: string) => {
     if (!code) return;
+    const cleanCode = code.trim();
     
-    const product = products?.find(p => p.barcode === code || p.sku === code);
+    // Search by Correlativo (SKU) or Barcode
+    const product = products?.find(p => p.sku === cleanCode || p.barcode === cleanCode);
     
     if (product) {
       playBeep('success');
@@ -138,13 +150,24 @@ export default function ConteoPage() {
           name: product.name,
           systemStock: warehouseInventory[product.id] || 0,
           countedStock: 0,
-          lastScanned: Date.now()
+          lastScanned: Date.now(),
+          diferencia: 0,
+          estado: 'faltante'
         };
         
+        const newCountedStock = existing.countedStock + quantityToAdd;
+        const diferencia = newCountedStock - existing.systemStock;
+        
+        let estado: 'cuadrado' | 'faltante' | 'sobrante' = 'cuadrado';
+        if (diferencia < 0) estado = 'faltante';
+        if (diferencia > 0) estado = 'sobrante';
+
         const updated = {
           ...existing,
-          countedStock: existing.countedStock + quantityToAdd,
-          lastScanned: Date.now()
+          countedStock: newCountedStock,
+          lastScanned: Date.now(),
+          diferencia,
+          estado
         };
         
         setLastScannedProduct(updated);
@@ -155,12 +178,11 @@ export default function ConteoPage() {
       toast({ title: "Producto Escaneado", description: `${product.name} (+${quantityToAdd})`, type: "success" });
     } else {
       playBeep('error');
-      setUnregisteredCodes(prev => Array.from(new Set([...prev, code])));
-      toast({ title: "Código no registrado", description: code, variant: "destructive" });
+      setUnregisteredCodes(prev => Array.from(new Set([...prev, cleanCode])));
+      toast({ title: "Código no registrado", description: cleanCode, variant: "destructive" });
     }
     
     setScanInput("");
-    // Re-focus after a short delay to ensure it works with fast scanners
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [products, countingMode, batchQuantity, warehouseInventory, toast]);
 
@@ -175,35 +197,35 @@ export default function ConteoPage() {
       return;
     }
     setIsCounting(true);
-    // Focus input on start
     setTimeout(() => inputRef.current?.focus(), 500);
   };
 
   const applyAdjustments = async () => {
     if (!firestore || !selectedWarehouseId || isApplying) return;
-    if (Object.keys(scannedItems).length === 0) {
+    const itemsList = Object.values(scannedItems);
+    if (itemsList.length === 0) {
       toast({ title: "Sin datos", description: "No hay productos contados para aplicar.", variant: "destructive" });
       return;
     }
 
-    if (!window.confirm("¿Está seguro de aplicar los ajustes? El stock del sistema será actualizado con las cantidades contadas.")) return;
+    if (!confirm("¿Está seguro de aplicar los ajustes? El stock del sistema será actualizado con las cantidades contadas.")) return;
 
     setIsApplying(true);
     try {
-      for (const item of Object.values(scannedItems) as ScannedItem[]) {
+      for (const item of itemsList) {
         const invRef = doc(firestore, "warehouses", selectedWarehouseId, "inventory", item.productId);
         const diff = item.countedStock - item.systemStock;
         
-        if (diff !== 0) {
-          // Update inventory
-          await setDoc(invRef, {
-            productId: item.productId,
-            warehouseId: selectedWarehouseId,
-            quantity: item.countedStock,
-            lastUpdated: serverTimestamp()
-          }, { merge: true });
+        // Update inventory with the exact counted stock
+        await setDoc(invRef, {
+          productId: item.productId,
+          warehouseId: selectedWarehouseId,
+          quantity: item.countedStock,
+          lastUpdated: serverTimestamp()
+        }, { merge: true });
 
-          // Log movement
+        if (diff !== 0) {
+          // Log movement for tracking
           addDocumentNonBlocking(collection(firestore, "warehouses", selectedWarehouseId, "inventoryMovements"), {
             productId: item.productId,
             quantity: Math.abs(diff),
@@ -228,9 +250,26 @@ export default function ConteoPage() {
     }
   };
 
-  const sortedScannedItems = useMemo(() => {
-    return (Object.values(scannedItems) as ScannedItem[]).sort((a, b) => b.lastScanned - a.lastScanned);
+  const resumen = useMemo((): ResumenConteo => {
+    const items = Object.values(scannedItems);
+    return items.reduce(
+      (acc, item) => {
+        acc.totalItems++;
+        if (item.estado === 'cuadrado') acc.cuadrados++;
+        if (item.estado === 'faltante') acc.faltantes++;
+        if (item.estado === 'sobrante') acc.sobrantes++;
+        return acc;
+      },
+      { totalItems: 0, cuadrados: 0, faltantes: 0, sobrantes: 0 }
+    );
   }, [scannedItems]);
+
+  const itemsFiltrados = useMemo(() => {
+    const items = Object.values(scannedItems).sort((a, b) => b.lastScanned - a.lastScanned);
+    if (filtro === 'faltantes') return items.filter(i => i.estado === 'faltante');
+    if (filtro === 'discrepancias') return items.filter(i => i.estado !== 'cuadrado');
+    return items;
+  }, [scannedItems, filtro]);
 
   return (
     <PageShell
@@ -319,6 +358,26 @@ export default function ConteoPage() {
         <div className="col-span-12 grid grid-cols-12 gap-8">
           {/* Panel Izquierdo: Escaneo y Estado */}
           <div className="col-span-12 lg:col-span-5 space-y-6">
+            {/* Tarjetas de Resumen (Semáforo) */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-[#12222e] border border-[#1e3848] rounded-xl p-4 shadow-lg text-center">
+                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest block mb-1">Total Ítems</span>
+                <span className="text-2xl font-black text-white">{resumen.totalItems}</span>
+              </div>
+              <div className="bg-[#12222e] border border-[#00a896]/30 rounded-xl p-4 shadow-lg text-center">
+                <span className="text-[9px] font-bold text-[#00a896] uppercase tracking-widest block mb-1">Cuadrados 🟢</span>
+                <span className="text-2xl font-black text-[#00a896]">{resumen.cuadrados}</span>
+              </div>
+              <div className="bg-[#12222e] border border-rose-500/30 rounded-xl p-4 shadow-lg text-center">
+                <span className="text-[9px] font-bold text-rose-500 uppercase tracking-widest block mb-1">Faltantes 🔴</span>
+                <span className="text-2xl font-black text-rose-500">{resumen.faltantes}</span>
+              </div>
+              <div className="bg-[#12222e] border border-[#38bdf8]/30 rounded-xl p-4 shadow-lg text-center">
+                <span className="text-[9px] font-bold text-[#38bdf8] uppercase tracking-widest block mb-1">Sobrantes 🔵</span>
+                <span className="text-2xl font-black text-[#38bdf8]">{resumen.sobrantes}</span>
+              </div>
+            </div>
+
             <div className="bg-[#12222e] border border-[#1e3848] rounded-2xl p-6 shadow-xl space-y-6">
               <div className="flex items-center justify-between border-b border-[#1e3848] pb-4">
                 <div className="flex items-center gap-3">
@@ -435,24 +494,40 @@ export default function ConteoPage() {
           {/* Panel Derecho: Tabla de Comparación */}
           <div className="col-span-12 lg:col-span-7 space-y-6">
             <div className="bg-[#12222e] border border-[#1e3848] rounded-2xl shadow-xl overflow-hidden flex flex-col h-full max-h-[700px]">
-              <div className="p-6 bg-[#0e1a24]/30 border-b border-[#1e3848] flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-3">
-                  <Package className="h-5 w-5 text-[#38bdf8]" />
-                  <h3 className="text-sm font-bold text-white uppercase tracking-widest">Resumen de Conteo</h3>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex flex-col text-right">
-                    <span className="text-[9px] font-bold text-gray-500 uppercase leading-none">Artículos Contados</span>
-                    <span className="text-lg font-bold text-white tracking-tight">{Object.keys(scannedItems).length}</span>
+              <div className="p-6 bg-[#0e1a24]/30 border-b border-[#1e3848] flex flex-col gap-4 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Package className="h-5 w-5 text-[#38bdf8]" />
+                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">Cuadre en Tiempo Real</h3>
                   </div>
-                  <div className="h-10 w-px bg-[#1e3848]" />
                   <button 
                     onClick={applyAdjustments}
                     disabled={isApplying || Object.keys(scannedItems).length === 0}
-                    className="bg-[#00a896] hover:bg-[#008f7e] text-white px-6 py-3 rounded-xl font-bold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-[#00a896]/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-[#00a896] hover:bg-[#008f7e] text-white px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-[#00a896]/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    Aplicar Ajuste de Stock
+                    Aplicar Ajuste Real
+                  </button>
+                </div>
+
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setFiltro('todos')}
+                    className={`px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase transition-all border ${filtro === 'todos' ? 'bg-white text-black border-white' : 'bg-[#091016] text-gray-500 border-[#1e3848] hover:text-white'}`}
+                  >
+                    Todos ({resumen.totalItems})
+                  </button>
+                  <button 
+                    onClick={() => setFiltro('faltantes')}
+                    className={`px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase transition-all border ${filtro === 'faltantes' ? 'bg-rose-600 text-white border-rose-600' : 'bg-[#091016] text-gray-500 border-[#1e3848] hover:text-rose-500'}`}
+                  >
+                    Solo Faltantes ({resumen.faltantes})
+                  </button>
+                  <button 
+                    onClick={() => setFiltro('discrepancias')}
+                    className={`px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase transition-all border ${filtro === 'discrepancias' ? 'bg-amber-600 text-white border-amber-600' : 'bg-[#091016] text-gray-500 border-[#1e3848] hover:text-amber-500'}`}
+                  >
+                    Ver Descalces ({resumen.faltantes + resumen.sobrantes})
                   </button>
                 </div>
               </div>
@@ -461,42 +536,57 @@ export default function ConteoPage() {
                 <Table>
                   <TableHeader className="bg-[#0e1a24] sticky top-0 z-10">
                     <TableRow className="border-[#1e3848] hover:bg-transparent h-14">
-                      <TableHead className="text-[10px] font-bold uppercase text-gray-400 pl-6">Producto</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-gray-400 pl-6">Código</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-gray-400">Producto</TableHead>
                       <TableHead className="text-center text-[10px] font-bold uppercase text-gray-400">Sistema</TableHead>
                       <TableHead className="text-center text-[10px] font-bold uppercase text-[#38bdf8]">Contado</TableHead>
-                      <TableHead className="text-right text-[10px] font-bold uppercase text-gray-400 pr-6">Dif.</TableHead>
+                      <TableHead className="text-center text-[10px] font-bold uppercase text-gray-400">Dif.</TableHead>
+                      <TableHead className="text-right text-[10px] font-bold uppercase text-gray-400 pr-6">Estado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-[#1e3848]/30">
-                    {(sortedScannedItems as ScannedItem[]).map((item) => {
-                      const diff = item.countedStock - item.systemStock;
-                      return (
-                        <TableRow key={item.productId} className={`hover:bg-[#1e3240]/20 border-none transition-colors ${item.lastScanned === lastScannedProduct?.lastScanned ? 'bg-[#00a896]/5' : ''}`}>
-                          <TableCell className="pl-6 py-4">
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold text-white uppercase truncate max-w-[200px]">{item.name}</span>
-                              <span className="text-[9px] font-mono text-gray-500 font-bold uppercase tracking-widest">{item.sku}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center font-bold text-gray-400 text-xs">{item.systemStock}</TableCell>
-                          <TableCell className="text-center font-black text-[#38bdf8] text-sm">{item.countedStock}</TableCell>
-                          <TableCell className="text-right pr-6">
-                            <Badge className={`text-[10px] font-bold uppercase border-none ${
-                              diff === 0 ? 'bg-gray-500/10 text-gray-500' : 
-                              diff > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
-                            }`}>
-                              {diff === 0 ? 'OK' : diff > 0 ? `+${diff}` : diff}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {sortedScannedItems.length === 0 && (
+                    {itemsFiltrados.map((item) => (
+                      <TableRow key={item.productId} className={`hover:bg-[#1e3240]/20 border-none transition-colors ${item.lastScanned === lastScannedProduct?.lastScanned ? 'bg-[#00a896]/5' : ''}`}>
+                        <TableCell className="pl-6 py-4 font-mono text-[10px] text-[#38bdf8] font-bold">
+                          {item.sku}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <span className="text-xs font-bold text-white uppercase truncate max-w-[180px] block">{item.name}</span>
+                        </TableCell>
+                        <TableCell className="text-center font-bold text-gray-400 text-xs">{item.systemStock}</TableCell>
+                        <TableCell className="text-center font-black text-[#38bdf8] text-sm">{item.countedStock}</TableCell>
+                        <TableCell className="text-center">
+                          <span className={`text-xs font-bold ${item.diferencia === 0 ? 'text-gray-500' : item.diferencia > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {item.estado === 'cuadrado' && (
+                              <span className="text-[10px] font-bold text-[#00a896] uppercase flex items-center gap-1">
+                                🟢 Cuadrado
+                              </span>
+                            )}
+                            {item.estado === 'faltante' && (
+                              <span className="text-[10px] font-bold text-rose-500 uppercase flex items-center gap-1">
+                                🔴 Faltan {Math.abs(item.diferencia)}
+                              </span>
+                            )}
+                            {item.estado === 'sobrante' && (
+                              <span className="text-[10px] font-bold text-[#38bdf8] uppercase flex items-center gap-1">
+                                🔵 Sobran {item.diferencia}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {itemsFiltrados.length === 0 && (
                       <TableRow className="hover:bg-transparent">
-                        <TableCell colSpan={4} className="py-32 text-center">
+                        <TableCell colSpan={6} className="py-32 text-center">
                           <div className="flex flex-col items-center gap-3 text-gray-600">
                             <ScanBarcode className="h-12 w-12 opacity-20" />
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] italic">Inicie el escaneo de productos para ver resultados</p>
+                            <p className="text-xs font-bold uppercase tracking-[0.2em] italic">No hay ítems registrados en este filtro.</p>
                           </div>
                         </TableCell>
                       </TableRow>
