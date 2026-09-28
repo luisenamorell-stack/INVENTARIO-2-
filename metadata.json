@@ -1,0 +1,6 @@
+{
+  "name": "StockFlow Pro",
+  "description": "Sistema de Gestión de Inventarios para Comercial Milagro",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

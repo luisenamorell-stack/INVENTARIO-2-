@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Represents a single product managed in the inventory system.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sku": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "costPrice": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "sku", "name", "category", "createdAt", "updatedAt"]
+    },
+    "Warehouse": {
+      "title": "Warehouse",
+      "description": "Represents a physical location or storage facility.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["Bodega", "Camion"] },
+        "location": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "type", "location", "createdAt", "updatedAt"]
+    },
+    "Inventory": {
+      "title": "Inventory",
+      "description": "Records current stock level of a product in a warehouse.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "warehouseId": { "type": "string" },
+        "quantity": { "type": "number" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "productId", "warehouseId", "quantity", "lastUpdated"]
+    },
+    "InventoryMovement": {
+      "title": "InventoryMovement",
+      "description": "Records individual transactions that change stock levels.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "warehouseId": { "type": "string" },
+        "quantity": { "type": "number" },
+        "movementType": { "type": "string" },
+        "sourceOrDestinationWarehouseId": { "type": "string" },
+        "movementDate": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "productId", "warehouseId", "quantity", "movementType", "movementDate", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Stores master data for products."
+    },
+    "/warehouses/{warehouseId}": {
+      "schema": { "$ref": "#/entities/Warehouse" },
+      "description": "Stores warehouse definitions."
+    },
+    "/warehouses/{warehouseId}/inventory/{productId}": {
+      "schema": { "$ref": "#/entities/Inventory" },
+      "description": "Stock quantity in a warehouse."
+    },
+    "/warehouses/{warehouseId}/inventoryMovements/{movementId}": {
+      "schema": { "$ref": "#/entities/InventoryMovement" },
+      "description": "Inventory transactions for a warehouse."
+    }
+  }
+}
