@@ -59,10 +59,10 @@ function AppLayout() {
           <div className="flex items-center gap-4">
             <SidebarTrigger className="text-[#38bdf8] hover:bg-[#12222e]" />
             <div className="flex flex-col">
-              <span className="text-[14px] font-bold text-[#38bdf8] uppercase tracking-wider">
+              <span className="text-[12px] sm:text-[14px] font-bold text-[#38bdf8] uppercase tracking-wider truncate max-w-[120px] sm:max-w-none">
                 Comercial Milagro
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 hidden xs:flex">
                 <Breadcrumbs />
               </div>
             </div>

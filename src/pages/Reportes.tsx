@@ -44,6 +44,11 @@ const chartConfig = {
 import { PageShell } from "@/src/components/layout/page-shell"
 
 export default function ReportesPage() {
+  const firestore = useFirestore()
+  const warehousesQuery = useMemoFirebase(() => firestore ? collection(firestore, "warehouses") : null, [firestore])
+  const { data: warehouses } = useCollection(warehousesQuery)
+  const [selectedWarehouseId, setSelectedWarehouseId] = React.useState("todas")
+
   const actions = (
     <div className="flex gap-4">
       <button className="border border-[#1e3848] hover:bg-[#182c3c] text-[#38bdf8] py-2.5 px-6 rounded-lg transition-all font-bold uppercase tracking-widest text-[10px] flex items-center gap-2">
@@ -64,14 +69,17 @@ export default function ReportesPage() {
       <div className="col-span-12 grid gap-6 md:grid-cols-4">
         <div className="space-y-2">
           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#00a896]">Bodega o Unidad</label>
-          <Select defaultValue="todas">
+          <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
             <SelectTrigger className="bg-[#091016] border border-[#1e3848] text-white h-11 rounded-lg font-bold">
               <SelectValue placeholder="Todas las bodegas">
-                Todas las Unidades
+                {selectedWarehouseId === "todas" ? "Todas las Unidades" : (warehouses?.find(w => w.id === selectedWarehouseId)?.name || "Todas las Unidades")}
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-[#12222e] border-[#1e3848] text-white">
               <SelectItem value="todas" className="text-xs font-bold uppercase">Todas las Unidades</SelectItem>
+              {warehouses?.map(w => (
+                <SelectItem key={w.id} value={w.id} className="text-xs font-bold uppercase">{w.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

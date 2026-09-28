@@ -53,78 +53,24 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/src/firebase"
 import { collection, doc, serverTimestamp, collectionGroup } from "firebase/firestore"
 import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/src/firebase/non-blocking-updates"
 import { Html5QrcodeScanner } from "html5-qrcode"
-import JsBarcode from "jsbarcode"
-import { Printer, RefreshCw, Wand2 } from "lucide-react"
-
-const BarcodePreview = ({ value, label }: { value: string, label: string }) => {
-  const svgRef = React.useRef<SVGSVGElement>(null);
-
-  useEffect(() => {
-    if (svgRef.current && value) {
-      try {
-        JsBarcode(svgRef.current, value, {
-          format: "CODE128",
-          width: 2,
-          height: 60,
-          displayValue: true,
-          fontSize: 14,
-          background: "#ffffff",
-          lineColor: "#000000",
-          margin: 10
-        });
-      } catch (e) {
-        console.error("JsBarcode error", e);
-      }
-    }
-  }, [value]);
-
-  const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    const svgHtml = svgRef.current?.outerHTML;
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Imprimir Etiqueta - ${label}</title>
-          <style>
-            body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
-            .label-info { margin-top: 10px; font-weight: bold; font-size: 12px; text-transform: uppercase; }
-            @media print { body { height: auto; } }
-          </style>
-        </head>
-        <body>
-          ${svgHtml}
-          <div class="label-info">${label}</div>
-          <script>setTimeout(() => { window.print(); window.close(); }, 500);</script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-4 p-4 bg-white rounded-lg border border-[#1e3848]">
-      <svg ref={svgRef}></svg>
-      <button 
-        onClick={handlePrint}
-        className="flex items-center gap-2 px-4 py-2 bg-[#0e1a24] text-white rounded-md text-xs font-bold hover:bg-black transition-all"
-      >
-        <Printer className="h-4 w-4" /> Imprimir Etiqueta
-      </button>
-    </div>
-  );
-};
+import { Wand2 } from "lucide-react"
 
 const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
+
   useEffect(() => {
     const scanner = new Html5QrcodeScanner("reader", { 
       fps: 10, 
       qrbox: { width: 250, height: 150 },
-      aspectRatio: 1.0
+      aspectRatio: 1.0,
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true
+      }
     }, false);
 
     scanner.render((decodedText) => {
-      onScan(decodedText);
+      onScanRef.current(decodedText);
       scanner.clear();
     }, (error) => {
       // ignore
@@ -133,10 +79,23 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
     return () => {
       scanner.clear().catch(e => console.error("Error clearing scanner", e));
     };
-  }, [onScan]);
+  }, []); // Only run once on mount
 
   return <div id="reader" className="w-full bg-[#091016] rounded-xl border border-[#1e3848] overflow-hidden" />;
 };
+
+import { Skeleton } from "@/src/components/ui/skeleton"
+
+const ProductSkeleton = () => (
+  <TableRow className="border-[#1e3848]/50 h-16">
+    <TableCell className="pl-6"><Skeleton className="h-8 w-16" /></TableCell>
+    <TableCell><Skeleton className="h-8 w-full max-w-[200px]" /></TableCell>
+    <TableCell className="text-right"><Skeleton className="h-6 w-12 ml-auto" /></TableCell>
+    <TableCell className="text-right"><Skeleton className="h-6 w-16 ml-auto" /></TableCell>
+    <TableCell className="text-right"><Skeleton className="h-6 w-20 ml-auto" /></TableCell>
+    <TableCell className="pr-6"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+  </TableRow>
+)
 
 const ProductRow = React.memo(({ prod, stock, onEdit, onDelete }: { prod: any, stock: number, onEdit: (p: any) => void, onDelete: (id: string) => void }) => {
   return (
@@ -273,11 +232,11 @@ export default function ProductosPage() {
     };
     if (editingProductId) {
       updateDocumentNonBlocking(doc(firestore, "products", editingProductId), data);
-      toast({ title: "Producto Actualizado" });
+      toast({ title: "Producto Actualizado", type: "success" });
     } else {
       const pid = doc(collection(firestore, "products")).id;
       setDocumentNonBlocking(doc(firestore, "products", pid), { ...data, id: pid, createdAt: serverTimestamp() }, { merge: true });
-      toast({ title: "Producto Creado" });
+      toast({ title: "Producto Creado", type: "success" });
     }
     handleCloseDialog();
   }, [firestore, isSaving, newProduct, editingProductId, toast, handleCloseDialog]);
@@ -326,12 +285,9 @@ export default function ProductosPage() {
               </TableHeader>
               <TableBody className="divide-y divide-[#1e3848]/50">
                 {isProductsLoading ? (
-                  <TableRow className="hover:bg-transparent border-none">
-                    <TableCell colSpan={6} className="text-center py-24">
-                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-[#00a896]" />
-                      <p className="mt-4 text-[10px] font-bold uppercase text-gray-500 tracking-widest">Sincronizando catálogo...</p>
-                    </TableCell>
-                  </TableRow>
+                  <>
+                    {[...Array(6)].map((_, i) => <ProductSkeleton key={i} />)}
+                  </>
                 ) : filteredProducts.length === 0 ? (
                   <TableRow className="hover:bg-transparent border-none">
                     <TableCell colSpan={6} className="text-center py-24 text-gray-500 font-bold uppercase tracking-widest text-xs italic">
@@ -356,7 +312,8 @@ export default function ProductosPage() {
                       setIsAdding(true);
                     }} 
                     onDelete={id => {
-                      if(window.confirm("¿Está seguro de eliminar este producto?")) {
+                      // Custom confirm logic could go here, keeping simple for now
+                      if(confirm("¿Está seguro de eliminar este producto?")) {
                         deleteDocumentNonBlocking(doc(firestore, "products", id)); 
                         toast({title:"Producto Eliminado", variant: "destructive"});
                       }
@@ -375,7 +332,12 @@ export default function ProductosPage() {
           <label className="text-xs font-semibold text-[#00a896] uppercase tracking-wider mb-3 block">Ordenar Catálogo</label>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full bg-[#091016] border border-[#1e3848] text-white h-12 rounded-lg font-bold">
-              <SelectValue placeholder="Ordenar por..." />
+              <SelectValue placeholder="Ordenar por...">
+                {sortBy === "sku_asc" && "SKU Correlativo"}
+                {sortBy === "name_asc" && "A - Z (Nombre)"}
+                {sortBy === "stock_desc" && "Mayor Existencia"}
+                {sortBy === "stock_asc" && "Bajo Stock"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-[#12222e] border-[#1e3848] text-white">
               <SelectItem value="sku_asc" className="text-xs font-bold uppercase">SKU Correlativo</SelectItem>
@@ -465,13 +427,6 @@ export default function ProductosPage() {
                 )}
               </div>
             </div>
-
-            {newProduct.barcode && !showScanner && (
-              <div className="space-y-2 animate-in fade-in duration-300">
-                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Vista Previa de Etiqueta</label>
-                <BarcodePreview value={newProduct.barcode} label={newProduct.nombre || "NUEVO ARTÍCULO"} />
-              </div>
-            )}
 
             {showScanner && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">

@@ -269,7 +269,7 @@ export default function ReconciliacionPage() {
     }, { merge: true })
     
     setQtyInputs(prev => ({ ...prev, [productId]: "" })); 
-    toast({ title: "Movimiento Registrado", description: `${productName}: ${type === 'Entry' ? '+' : '-'}${qty}` })
+    toast({ title: "Movimiento Registrado", description: `${productName}: ${type === 'Entry' ? '+' : '-'}${qty}`, type: "success" })
   }, [firestore, selectedWarehouseId, qtyInputs, toast, selectedWh])
 
   const handleUpdateDailySale = useCallback((productId: string, productName: string, dayIndex: number, newValueStr: string, oldValue: number) => {
@@ -306,7 +306,7 @@ export default function ReconciliacionPage() {
       lastUpdated: serverTimestamp() 
     }, { merge: true })
     
-    toast({ title: "Planilla Actualizada", description: productName })
+    toast({ title: "Planilla Actualizada", description: productName, type: "success" })
   }, [firestore, selectedWarehouseId, weekDays, toast, selectedWh])
 
   const handleDeleteMovement = useCallback((m: any) => {
@@ -431,7 +431,9 @@ export default function ReconciliacionPage() {
           <div className="flex gap-2">
             <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
               <SelectTrigger className="flex-1 bg-[#091016] border border-[#1e3848] text-white h-12 rounded-lg font-bold">
-                <SelectValue placeholder="Elegir bodega..." />
+                <SelectValue placeholder="Elegir bodega...">
+                  {warehouses?.find(w => w.id === selectedWarehouseId)?.name || "Elegir bodega..."}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#12222e] border-[#1e3848] text-white">
                 {warehouses?.map(w => (

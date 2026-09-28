@@ -50,16 +50,21 @@ const playBeep = (type: 'success' | 'error' = 'success') => {
 };
 
 const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
+
   useEffect(() => {
     const scanner = new Html5QrcodeScanner("reader-conteo", { 
-      fps: 20, 
+      fps: 10, 
       qrbox: { width: 300, height: 150 },
-      aspectRatio: 1.0
+      aspectRatio: 1.0,
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true
+      }
     }, false);
 
     scanner.render((decodedText) => {
-      onScan(decodedText);
-      // We don't clear so we can scan multiple items
+      onScanRef.current(decodedText);
     }, (error) => {
       // ignore
     });
@@ -67,7 +72,7 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
     return () => {
       scanner.clear().catch(e => console.error("Error clearing scanner", e));
     };
-  }, [onScan]);
+  }, []); // Only run once on mount
 
   return <div id="reader-conteo" className="w-full bg-[#091016] rounded-xl border border-[#1e3848] overflow-hidden shadow-2xl" />;
 };
@@ -147,7 +152,7 @@ export default function ConteoPage() {
       });
 
       if (countingMode === "batch") setBatchQuantity("1");
-      toast({ title: "Producto Escaneado", description: `${product.name} (+${quantityToAdd})` });
+      toast({ title: "Producto Escaneado", description: `${product.name} (+${quantityToAdd})`, type: "success" });
     } else {
       playBeep('error');
       setUnregisteredCodes(prev => Array.from(new Set([...prev, code])));
@@ -185,7 +190,7 @@ export default function ConteoPage() {
 
     setIsApplying(true);
     try {
-      for (const item of Object.values(scannedItems)) {
+      for (const item of Object.values(scannedItems) as ScannedItem[]) {
         const invRef = doc(firestore, "warehouses", selectedWarehouseId, "inventory", item.productId);
         const diff = item.countedStock - item.systemStock;
         
@@ -210,7 +215,7 @@ export default function ConteoPage() {
         }
       }
 
-      toast({ title: "Inventario Ajustado", description: "El stock ha sido actualizado con éxito." });
+      toast({ title: "Inventario Ajustado", description: "El stock ha sido actualizado con éxito.", type: "success" });
       setIsCounting(false);
       setScannedItems({});
       setUnregisteredCodes([]);
@@ -224,7 +229,7 @@ export default function ConteoPage() {
   };
 
   const sortedScannedItems = useMemo(() => {
-    return Object.values(scannedItems).sort((a, b) => b.lastScanned - a.lastScanned);
+    return (Object.values(scannedItems) as ScannedItem[]).sort((a, b) => b.lastScanned - a.lastScanned);
   }, [scannedItems]);
 
   return (
@@ -265,7 +270,9 @@ export default function ConteoPage() {
                 <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#00a896] ml-1">Ubicación de Auditoría</label>
                 <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
                   <SelectTrigger className="w-full bg-[#091016] border border-[#1e3848] text-white h-14 rounded-xl text-lg font-bold px-6">
-                    <SelectValue placeholder="SELECCIONAR BODEGA O CAMIÓN..." />
+                    <SelectValue placeholder="SELECCIONAR BODEGA O CAMIÓN...">
+                      {warehouses?.find(w => w.id === selectedWarehouseId)?.name || "SELECCIONAR BODEGA O CAMIÓN..."}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="bg-[#12222e] border-[#1e3848] text-white">
                     {warehouses?.map(w => (
@@ -461,7 +468,7 @@ export default function ConteoPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-[#1e3848]/30">
-                    {sortedScannedItems.map((item) => {
+                    {(sortedScannedItems as ScannedItem[]).map((item) => {
                       const diff = item.countedStock - item.systemStock;
                       return (
                         <TableRow key={item.productId} className={`hover:bg-[#1e3240]/20 border-none transition-colors ${item.lastScanned === lastScannedProduct?.lastScanned ? 'bg-[#00a896]/5' : ''}`}>

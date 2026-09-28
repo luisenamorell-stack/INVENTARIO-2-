@@ -4,6 +4,9 @@ import App from './App.tsx';
 import './index.css';
 import { db, auth, FirebaseContext } from './firebase';
 import { signInAnonymously } from 'firebase/auth';
+import { registerSW } from 'virtual:pwa-register';
+
+registerSW({ immediate: true });
 
 function Root() {
   useEffect(() => {

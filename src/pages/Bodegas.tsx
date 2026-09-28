@@ -80,7 +80,7 @@ export default function BodegasPage() {
         updatedAt: serverTimestamp()
       }
       updateDocumentNonBlocking(doc(firestore, "warehouses", editingId), data)
-      toast({ title: "Unidad Actualizada", description: `Los cambios en ${formData.name} han sido guardados.` })
+      toast({ title: "Unidad Actualizada", description: `Los cambios en ${formData.name} han sido guardados.`, type: "success" })
     } else {
       const id = doc(collection(firestore, "warehouses")).id
       const data = {
@@ -90,7 +90,7 @@ export default function BodegasPage() {
         updatedAt: serverTimestamp()
       }
       setDocumentNonBlocking(doc(firestore, "warehouses", id), data, { merge: true })
-      toast({ title: "Unidad Registrada", description: `La unidad ${formData.name} ha sido creada correctamente.` })
+      toast({ title: "Unidad Registrada", description: `La unidad ${formData.name} ha sido creada correctamente.`, type: "success" })
     }
     
     closeDialog()

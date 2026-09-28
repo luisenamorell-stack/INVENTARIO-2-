@@ -149,7 +149,7 @@ export default function MovimientosPage() {
         }
       }
 
-      toast({ title: "Ficha Procesada", description: "Inventario actualizado correctamente." })
+      toast({ title: "Ficha Procesada", description: "Inventario actualizado correctamente.", type: "success" })
       setItems([{ id: Date.now(), productId: "", quantity: 1 }])
       setNotes("")
       setAuthorizedBy("")
@@ -180,7 +180,9 @@ export default function MovimientosPage() {
               <label className="text-xs font-semibold text-[#00a896] uppercase tracking-wider">Punto de Origen</label>
               <Select value={originWarehouseId} onValueChange={setOriginWarehouseId}>
                 <SelectTrigger className="w-full bg-[#091016] border border-[#1e3848] rounded-lg px-4 py-2.5 text-sm text-white focus:border-[#00a896] h-11 transition-all">
-                  <SelectValue placeholder="Origen de mercancía" />
+                  <SelectValue placeholder="Origen de mercancía">
+                    {originWarehouseId === "external" ? "PROVEEDOR EXTERNO" : (warehouses?.find(w => w.id === originWarehouseId)?.name || "Origen de mercancía")}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-[#12222e] border-[#1e3848] text-white">
                   <SelectItem value="external" className="hover:bg-[#1e3240] focus:bg-[#1e3240] text-[#38bdf8] font-bold">PROVEEDOR EXTERNO</SelectItem>
@@ -192,7 +194,9 @@ export default function MovimientosPage() {
               <label className="text-xs font-semibold text-[#00a896] uppercase tracking-wider">Punto de Destino</label>
               <Select value={destinationWarehouseId} onValueChange={setDestinationWarehouseId}>
                 <SelectTrigger className="w-full bg-[#091016] border border-[#1e3848] rounded-lg px-4 py-2.5 text-sm text-white focus:border-[#00a896] h-11 transition-all">
-                  <SelectValue placeholder="Destino de mercancía" />
+                  <SelectValue placeholder="Destino de mercancía">
+                    {destinationWarehouseId === "customer" ? "CLIENTE FINAL / VENTA" : (warehouses?.find(w => w.id === destinationWarehouseId)?.name || "Destino de mercancía")}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-[#12222e] border-[#1e3848] text-white">
                   <SelectItem value="customer" className="hover:bg-[#1e3240] focus:bg-[#1e3240] text-[#38bdf8] font-bold">CLIENTE FINAL / VENTA</SelectItem>
@@ -228,7 +232,13 @@ export default function MovimientosPage() {
                   <div className="flex-1 w-full">
                     <Select value={item.productId} onValueChange={(v) => handleUpdateItem(item.id, "productId", v)}>
                       <SelectTrigger className="w-full bg-[#091016] border border-[#1e3848] text-white text-xs h-10 px-4">
-                        <SelectValue placeholder="Seleccionar producto..." />
+                        <SelectValue placeholder="Seleccionar producto...">
+                          {products?.find(p => p.id === item.productId) ? (
+                            <>
+                              <span className="font-mono text-[#38bdf8] mr-2">[{products.find(p => p.id === item.productId).sku}]</span> {products.find(p => p.id === item.productId).name}
+                            </>
+                          ) : "Seleccionar producto..."}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px] bg-[#12222e] border-[#1e3848] text-white">
                         <ScrollArea className="h-[250px]">

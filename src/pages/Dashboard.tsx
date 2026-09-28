@@ -27,6 +27,8 @@ import { Progress } from "@/src/components/ui/progress"
 import { PageShell } from "@/src/components/layout/page-shell"
 import { cn } from "@/src/lib/utils"
 
+import { Skeleton } from "@/src/components/ui/skeleton"
+
 export default function Dashboard() {
   const firestore = useFirestore()
   const { user } = useUser()
@@ -155,7 +157,21 @@ export default function Dashboard() {
       {/* Columna Izquierda: Estadísticas y Actividad */}
       <div className="col-span-12 lg:col-span-8 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => (
+          {loadingProducts || loadingWarehouses ? (
+            [...Array(4)].map((_, i) => (
+              <div key={i} className="bg-gradient-to-br from-[#12222e] to-[#0e1a24] border border-[#1e3848] rounded-2xl p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <Skeleton className="h-10 w-10 rounded-xl" />
+                  <Skeleton className="h-4 w-12 rounded-full" />
+                </div>
+                <div className="space-y-3">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              </div>
+            ))
+          ) : stats.map((stat) => (
             <div key={stat.title} className="bg-gradient-to-br from-[#12222e] to-[#0e1a24] border border-[#1e3848] rounded-2xl p-6 shadow-xl hover:border-[#38bdf8]/40 transition-all group relative overflow-hidden">
               {/* Background accent */}
               <div className={cn("absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-5 blur-2xl transition-all group-hover:opacity-10", stat.bg)} />
@@ -195,7 +211,23 @@ export default function Dashboard() {
           </div>
           <div className="divide-y divide-[#1e3848]">
             {loadingMovements ? (
-              <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-[#00a896]" /></div>
+              <div className="space-y-4 p-6">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-10 w-10 rounded-lg" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-right">
+                      <Skeleton className="h-4 w-8 ml-auto" />
+                      <Skeleton className="h-3 w-12 ml-auto" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : movements?.length === 0 ? (
               <div className="py-12 text-center text-gray-500 italic text-xs">Sin actividad reciente</div>
             ) : (
