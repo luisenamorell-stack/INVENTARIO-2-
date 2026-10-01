@@ -55,9 +55,15 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
 
   useEffect(() => {
     const scanner = new Html5QrcodeScanner("reader-conteo", { 
-      fps: 10, 
+      fps: 20, 
       qrbox: { width: 300, height: 150 },
       aspectRatio: 1.0,
+      videoConstraints: {
+        facingMode: "environment",
+        focusMode: "continuous",
+        width: { min: 1280, ideal: 1920 },
+        height: { min: 720, ideal: 1080 }
+      },
       experimentalFeatures: {
         useBarCodeDetectorIfSupported: true
       }
