@@ -538,7 +538,7 @@ export default function MovimientosPage() {
         <button 
           onClick={handleSubmit} 
           disabled={isProcessing} 
-          className="w-full bg-[#2a7b9b] hover:bg-[#236883] text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-not-allowed group"
+          className="w-full bg-[#2a7b9b] hover:bg-[#236883] text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-not-allowed group hidden lg:flex"
         >
           {isProcessing ? (
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -546,6 +546,28 @@ export default function MovimientosPage() {
             <>
               <CheckCircle2 className="h-5 w-5 group-hover:scale-110 transition-transform" />
               Procesar Movimiento
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Sticky Mobile Confirm Button */}
+      <div className="lg:hidden fixed bottom-16 left-0 right-0 p-4 bg-[#0e1a24]/90 backdrop-blur-md border-t border-[#1e3240] z-[45] flex gap-3 shadow-[0_-10px_20px_rgba(0,0,0,0.4)]">
+        <div className="flex-1">
+          <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest">Total Unidades</p>
+          <p className="text-sm font-black text-[#00a896]">{items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0)}</p>
+        </div>
+        <button 
+          onClick={handleSubmit} 
+          disabled={isProcessing} 
+          className="flex-[2] bg-[#00a896] active:scale-95 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] disabled:opacity-50"
+        >
+          {isProcessing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <CheckCircle2 className="h-4 w-4" />
+              Procesar Ficha
             </>
           )}
         </button>

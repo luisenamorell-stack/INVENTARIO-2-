@@ -623,7 +623,8 @@ export default function ConteoPage() {
                     className="bg-[#00a896] hover:bg-[#008f7e] text-white px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-[#00a896]/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    Aplicar Ajuste Real
+                    <span className="hidden xs:inline">Aplicar Ajuste Real</span>
+                    <span className="xs:hidden">Aplicar</span>
                   </button>
                 </div>
 
@@ -767,6 +768,24 @@ export default function ConteoPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Sticky Mobile Confirm Button for Conteo */}
+      {isCounting && (
+        <div className="lg:hidden fixed bottom-16 left-0 right-0 p-4 bg-[#0e1a24]/90 backdrop-blur-md border-t border-[#1e3240] z-[45] flex items-center justify-between shadow-[0_-10px_20px_rgba(0,0,0,0.4)]">
+          <div className="flex flex-col">
+            <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest">Items Contados</span>
+            <span className="text-sm font-black text-[#38bdf8]">{resumen.totalItems}</span>
+          </div>
+          <button 
+            onClick={applyAdjustments}
+            disabled={isApplying || Object.keys(scannedItems).length === 0}
+            className="bg-[#00a896] active:scale-95 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px] disabled:opacity-50"
+          >
+            {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+            Confirmar Cuadre
+          </button>
         </div>
       )}
     </PageShell>
