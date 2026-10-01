@@ -25,7 +25,6 @@ import { useToast } from "@/src/hooks/use-toast"
 import { useFirestore, useCollection, useMemoFirebase } from "@/src/firebase"
 import { collection, doc, serverTimestamp, increment, setDoc } from "firebase/firestore"
 import { setDocumentNonBlocking, addDocumentNonBlocking } from "@/src/firebase/non-blocking-updates"
-import { Html5QrcodeScanner } from "html5-qrcode"
 
 // Helper to play confirmation beep
 let audioCtx: AudioContext | null = null;
@@ -49,38 +48,134 @@ const playBeep = (type: 'success' | 'error' = 'success') => {
   oscillator.stop(audioCtx.currentTime + 0.1);
 };
 
+import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
+import { Zap, ZapOff } from "lucide-react";
+
 const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+  const [hasTorch, setHasTorch] = useState(false);
+  const [isTorchOn, setIsTorchOn] = useState(false);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
 
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner("reader-conteo", { 
-      fps: 20, 
-      qrbox: { width: 300, height: 150 },
-      aspectRatio: 1.0,
-      videoConstraints: {
-        facingMode: "environment",
-        focusMode: "continuous",
-        width: { min: 1280, ideal: 1920 },
-        height: { min: 720, ideal: 1080 }
-      },
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true
-      }
-    }, false);
+    const hints = new Map();
+    const formats = [
+      BarcodeFormat.QR_CODE,
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.ITF,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E
+    ];
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+    hints.set(DecodeHintType.CHARACTER_SET, 'utf-8');
 
-    scanner.render((decodedText) => {
-      onScanRef.current(decodedText);
-    }, (error) => {
-      // ignore
-    });
+    const reader = new BrowserMultiFormatReader(hints);
+    readerRef.current = reader;
+
+    const startScanner = async () => {
+      try {
+        const videoInputDevices = await reader.listVideoInputDevices();
+        const backCamera = videoInputDevices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('rear') ||
+          device.label.toLowerCase().includes('entorno')
+        ) || videoInputDevices[0];
+
+        if (backCamera && videoRef.current) {
+          await reader.decodeFromVideoDevice(backCamera.deviceId, videoRef.current, (result, error) => {
+            if (result) {
+              onScanRef.current(result.getText());
+            }
+          });
+
+          // Check for torch support
+          const stream = videoRef.current.srcObject as MediaStream;
+          const track = stream?.getVideoTracks()[0];
+          if (track) {
+            const capabilities = track.getCapabilities() as any;
+            if (capabilities.torch) {
+              setHasTorch(true);
+            }
+            
+            // Apply aggressive focus if supported
+            try {
+              await track.applyConstraints({
+                advanced: [{ 
+                  focusMode: 'continuous',
+                  width: { min: 1280, ideal: 1920 },
+                  height: { min: 720, ideal: 1080 }
+                }]
+              } as any);
+            } catch (e) {
+              console.warn("Advanced constraints failed", e);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Scanner Error:", err);
+      }
+    };
+
+    startScanner();
 
     return () => {
-      scanner.clear().catch(e => console.error("Error clearing scanner", e));
+      reader.reset();
     };
-  }, []); // Only run once on mount
+  }, []);
 
-  return <div id="reader-conteo" className="w-full bg-[#091016] rounded-xl border border-[#1e3848] overflow-hidden shadow-2xl" />;
+  const toggleTorch = async () => {
+    if (!videoRef.current || !hasTorch) return;
+    const stream = videoRef.current.srcObject as MediaStream;
+    const track = stream?.getVideoTracks()[0];
+    if (track) {
+      try {
+        const nextState = !isTorchOn;
+        await track.applyConstraints({
+          advanced: [{ torch: nextState }]
+        } as any);
+        setIsTorchOn(nextState);
+      } catch (e) {
+        console.error("Torch Error:", e);
+      }
+    }
+  };
+
+  return (
+    <div className="relative w-full aspect-[4/3] bg-black rounded-xl overflow-hidden border border-[#1e3848] shadow-2xl group">
+      <video 
+        ref={videoRef} 
+        className="w-full h-full object-cover"
+      />
+      {/* Overlay decorations */}
+      <div className="absolute inset-0 border-[2px] border-[#38bdf8]/30 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-1/3 border-2 border-[#38bdf8] rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none animate-pulse" />
+      
+      {/* Scanning Line */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-4/5 h-[1px] bg-[#38bdf8] shadow-[0_0_10px_#38bdf8] animate-scan-line pointer-events-none" />
+
+      {hasTorch && (
+        <button 
+          onClick={toggleTorch}
+          className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all ${isTorchOn ? 'bg-amber-500 text-white' : 'bg-black/50 text-gray-400 border border-white/10 hover:bg-black/70'}`}
+        >
+          {isTorchOn ? <Zap className="h-6 w-6" /> : <ZapOff className="h-6 w-6" />}
+        </button>
+      )}
+
+      <div className="absolute top-4 left-4 bg-black/60 px-3 py-1 rounded-full border border-[#38bdf8]/30">
+        <span className="text-[9px] font-bold text-[#38bdf8] uppercase tracking-widest flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full bg-[#38bdf8] animate-pulse" />
+          HD Scanning Active
+        </span>
+      </div>
+    </div>
+  );
 };
 
 interface ScannedItem {
