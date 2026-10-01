@@ -48,107 +48,130 @@ const playBeep = (type: 'success' | 'error' = 'success') => {
   oscillator.stop(audioCtx.currentTime + 0.1);
 };
 
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
 import { Zap, ZapOff } from "lucide-react";
 
 const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
-  const [scanner, setScanner] = useState<Html5Qrcode | null>(null);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
 
   useEffect(() => {
-    const html5QrCode = new Html5Qrcode("reader-conteo");
-    setScanner(html5QrCode);
+    const hints = new Map();
+    const formats = [
+      BarcodeFormat.QR_CODE,
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.ITF,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E
+    ];
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+    hints.set(DecodeHintType.CHARACTER_SET, 'utf-8');
 
-    const config = {
-      fps: 20,
-      qrbox: { width: 300, height: 150 },
-      aspectRatio: 1.0,
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.QR_CODE,
-      ],
-      videoConstraints: {
-        facingMode: "environment",
-        focusMode: "continuous",
-        width: { min: 1280, ideal: 1920 },
-        height: { min: 720, ideal: 1080 }
+    const reader = new BrowserMultiFormatReader(hints);
+    readerRef.current = reader;
+
+    const startScanner = async () => {
+      try {
+        const videoInputDevices = await reader.listVideoInputDevices();
+        const backCamera = videoInputDevices.find(device => 
+          device.label.toLowerCase().includes('back') || 
+          device.label.toLowerCase().includes('rear') ||
+          device.label.toLowerCase().includes('entorno')
+        ) || videoInputDevices[0];
+
+        if (backCamera && videoRef.current) {
+          await reader.decodeFromVideoDevice(backCamera.deviceId, videoRef.current, (result, error) => {
+            if (result) {
+              onScanRef.current(result.getText());
+            }
+          });
+
+          // Check for torch support
+          const stream = videoRef.current.srcObject as MediaStream;
+          const track = stream?.getVideoTracks()[0];
+          if (track) {
+            const capabilities = track.getCapabilities() as any;
+            if (capabilities.torch) {
+              setHasTorch(true);
+            }
+            
+            // Apply aggressive focus if supported
+            try {
+              await track.applyConstraints({
+                advanced: [{ 
+                  focusMode: 'continuous',
+                  width: { min: 1280, ideal: 1920 },
+                  height: { min: 720, ideal: 1080 }
+                }]
+              } as any);
+            } catch (e) {
+              console.warn("Advanced constraints failed", e);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Scanner Error:", err);
       }
     };
 
-    html5QrCode.start(
-      { facingMode: "environment" },
-      config,
-      (decodedText) => {
-        onScanRef.current(decodedText);
-      },
-      (errorMessage) => {
-        // ignore
-      }
-    ).then(() => {
-      // Check for torch support after start
-      const track = html5QrCode.getRunningTrack();
-      if (track) {
-        const capabilities = track.getCapabilities() as any;
-        if (capabilities.torch) {
-          setHasTorch(true);
-        }
-      }
-    }).catch(err => {
-      console.error("Scanner error:", err);
-    });
+    startScanner();
 
     return () => {
-      if (html5QrCode.isScanning) {
-        html5QrCode.stop().catch(e => console.error("Stop error", e));
-      }
+      reader.reset();
     };
   }, []);
 
   const toggleTorch = async () => {
-    if (!scanner || !hasTorch) return;
-    try {
-      const nextState = !isTorchOn;
-      await scanner.applyVideoConstraints({
-        advanced: [{ torch: nextState }]
-      } as any);
-      setIsTorchOn(nextState);
-    } catch (e) {
-      console.error("Torch Error:", e);
+    if (!videoRef.current || !hasTorch) return;
+    const stream = videoRef.current.srcObject as MediaStream;
+    const track = stream?.getVideoTracks()[0];
+    if (track) {
+      try {
+        const nextState = !isTorchOn;
+        await track.applyConstraints({
+          advanced: [{ torch: nextState }]
+        } as any);
+        setIsTorchOn(nextState);
+      } catch (e) {
+        console.error("Torch Error:", e);
+      }
     }
   };
 
   return (
     <div className="relative w-full aspect-[4/3] bg-black rounded-xl overflow-hidden border border-[#1e3848] shadow-2xl group">
-      <div id="reader-conteo" className="w-full h-full" />
-      
+      <video 
+        ref={videoRef} 
+        className="w-full h-full object-cover"
+      />
       {/* Overlay decorations */}
-      <div className="absolute inset-0 border-[2px] border-[#38bdf8]/30 pointer-events-none z-10" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-1/3 border-2 border-[#38bdf8] rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none z-10 animate-pulse" />
+      <div className="absolute inset-0 border-[2px] border-[#38bdf8]/30 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-1/3 border-2 border-[#38bdf8] rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none animate-pulse" />
       
       {/* Scanning Line */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-4/5 h-[1px] bg-[#38bdf8] shadow-[0_0_10px_#38bdf8] animate-scan-line pointer-events-none z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-4/5 h-[1px] bg-[#38bdf8] shadow-[0_0_10px_#38bdf8] animate-scan-line pointer-events-none" />
 
       {hasTorch && (
         <button 
           onClick={toggleTorch}
-          className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all z-20 ${isTorchOn ? 'bg-amber-500 text-white' : 'bg-black/50 text-gray-400 border border-white/10 hover:bg-black/70'}`}
+          className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all ${isTorchOn ? 'bg-amber-500 text-white' : 'bg-black/50 text-gray-400 border border-white/10 hover:bg-black/70'}`}
         >
           {isTorchOn ? <Zap className="h-6 w-6" /> : <ZapOff className="h-6 w-6" />}
         </button>
       )}
 
-      <div className="absolute top-4 left-4 bg-black/60 px-3 py-1 rounded-full border border-[#38bdf8]/30 z-20">
+      <div className="absolute top-4 left-4 bg-black/60 px-3 py-1 rounded-full border border-[#38bdf8]/30">
         <span className="text-[9px] font-bold text-[#38bdf8] uppercase tracking-widest flex items-center gap-2">
           <div className="h-1.5 w-1.5 rounded-full bg-[#38bdf8] animate-pulse" />
-          Pro-Scan Active
+          HD Scanning Active
         </span>
       </div>
     </div>
