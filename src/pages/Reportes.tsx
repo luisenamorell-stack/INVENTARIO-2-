@@ -27,6 +27,8 @@ import {
 } from "@/src/components/ui/chart"
 import { Badge } from "@/src/components/ui/badge"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+import { useFirestore, useCollection, useMemoFirebase } from "@/src/firebase"
+import { collection } from "firebase/firestore"
 
 const chartData: any[] = []
 

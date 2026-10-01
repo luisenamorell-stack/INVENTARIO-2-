@@ -319,7 +319,7 @@ export default function ConteoPage() {
 
   const applyAdjustments = async () => {
     if (!firestore || !selectedWarehouseId || isApplying) return;
-    const itemsList = Object.values(scannedItems);
+    const itemsList = Object.values(scannedItems) as ScannedItem[];
     if (itemsList.length === 0) {
       toast({ title: "Sin datos", description: "No hay productos contados para aplicar.", variant: "destructive" });
       return;
@@ -368,7 +368,7 @@ export default function ConteoPage() {
   };
 
   const resumen = useMemo((): ResumenConteo => {
-    const items = Object.values(scannedItems);
+    const items = Object.values(scannedItems) as ScannedItem[];
     return items.reduce(
       (acc, item) => {
         acc.totalItems++;
@@ -382,7 +382,7 @@ export default function ConteoPage() {
   }, [scannedItems]);
 
   const itemsFiltrados = useMemo(() => {
-    const items = Object.values(scannedItems).sort((a, b) => b.lastScanned - a.lastScanned);
+    const items = (Object.values(scannedItems) as ScannedItem[]).sort((a, b) => b.lastScanned - a.lastScanned);
     if (filtro === 'faltantes') return items.filter(i => i.estado === 'faltante');
     if (filtro === 'discrepancias') return items.filter(i => i.estado !== 'cuadrado');
     return items;
@@ -650,7 +650,8 @@ export default function ConteoPage() {
               </div>
 
               <div className="overflow-auto flex-1 custom-scrollbar">
-                <Table>
+                {/* Desktop Table View */}
+                <Table className="hidden sm:table">
                   <TableHeader className="bg-[#0e1a24] sticky top-0 z-10">
                     <TableRow className="border-[#1e3848] hover:bg-transparent h-14">
                       <TableHead className="text-[10px] font-bold uppercase text-gray-400 pl-4 sm:pl-6">Producto</TableHead>
@@ -680,35 +681,80 @@ export default function ConteoPage() {
                           <div className="flex items-center justify-end gap-1.5">
                             {item.estado === 'cuadrado' && (
                               <span className="text-[9px] sm:text-[10px] font-bold text-[#00a896] uppercase flex items-center gap-1">
-                                <div className="h-1.5 w-1.5 rounded-full bg-[#00a896]" /> <span className="hidden xs:inline">OK</span>
+                                <div className="h-1.5 w-1.5 rounded-full bg-[#00a896]" /> <span>OK</span>
                               </span>
                             )}
                             {item.estado === 'faltante' && (
                               <span className="text-[9px] sm:text-[10px] font-bold text-rose-500 uppercase flex items-center gap-1">
-                                <div className="h-1.5 w-1.5 rounded-full bg-rose-500" /> <span className="hidden xs:inline">Faltan</span> {Math.abs(item.diferencia)}
+                                <div className="h-1.5 w-1.5 rounded-full bg-rose-500" /> <span>Faltan</span> {Math.abs(item.diferencia)}
                               </span>
                             )}
                             {item.estado === 'sobrante' && (
                               <span className="text-[9px] sm:text-[10px] font-bold text-[#38bdf8] uppercase flex items-center gap-1">
-                                <div className="h-1.5 w-1.5 rounded-full bg-[#38bdf8]" /> <span className="hidden xs:inline">Sobran</span> {item.diferencia}
+                                <div className="h-1.5 w-1.5 rounded-full bg-[#38bdf8]" /> <span>Sobran</span> {item.diferencia}
                               </span>
                             )}
                           </div>
                         </TableCell>
                       </TableRow>
                     ))}
-                    {itemsFiltrados.length === 0 && (
-                      <TableRow className="hover:bg-transparent">
-                        <TableCell colSpan={6} className="py-32 text-center">
-                          <div className="flex flex-col items-center gap-3 text-gray-600">
-                            <ScanBarcode className="h-12 w-12 opacity-20" />
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] italic">No hay ítems registrados en este filtro.</p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
+
+                {/* Mobile Stacked View */}
+                <div className="sm:hidden divide-y divide-[#1e3848]/30">
+                  {itemsFiltrados.map((item) => (
+                    <div key={item.productId} className={`p-4 space-y-3 transition-colors ${item.lastScanned === lastScannedProduct?.lastScanned ? 'bg-[#00a896]/10' : 'bg-transparent'}`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-white uppercase tracking-tight leading-tight">{item.name}</span>
+                          <span className="text-[9px] font-mono text-[#38bdf8] font-bold mt-0.5">{item.sku}</span>
+                        </div>
+                        <Badge className={cn(
+                          "text-[8px] uppercase tracking-widest font-black py-0.5 px-2",
+                          item.estado === 'cuadrado' ? "bg-emerald-500/10 text-emerald-500" :
+                          item.estado === 'faltante' ? "bg-rose-500/10 text-rose-500" : "bg-[#38bdf8]/10 text-[#38bdf8]"
+                        )}>
+                          {item.estado === 'cuadrado' ? 'OK' : item.estado === 'faltante' ? 'FALTANTE' : 'SOBRANTE'}
+                        </Badge>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-[#091016] border border-[#1e3848] rounded-lg p-2 text-center">
+                          <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1">Sist.</p>
+                          <p className="text-xs font-bold text-gray-400">{item.systemStock}</p>
+                        </div>
+                        <div className="bg-[#091016] border border-[#38bdf8]/30 rounded-lg p-2 text-center">
+                          <p className="text-[8px] font-bold text-[#38bdf8] uppercase tracking-widest mb-1">Cont.</p>
+                          <p className="text-xs font-black text-white">{item.countedStock}</p>
+                        </div>
+                        <div className={cn(
+                          "bg-[#091016] border rounded-lg p-2 text-center",
+                          item.diferencia === 0 ? "border-[#1e3848]" : 
+                          item.diferencia > 0 ? "border-emerald-500/30" : "border-rose-500/30"
+                        )}>
+                          <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1">Dif.</p>
+                          <p className={cn(
+                            "text-xs font-black",
+                            item.diferencia === 0 ? "text-gray-500" : 
+                            item.diferencia > 0 ? "text-emerald-500" : "text-rose-500"
+                          )}>
+                            {item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {itemsFiltrados.length === 0 && (
+                  <div className="py-32 text-center">
+                    <div className="flex flex-col items-center gap-3 text-gray-600">
+                      <ScanBarcode className="h-12 w-12 opacity-20" />
+                      <p className="text-xs font-bold uppercase tracking-[0.2em] italic">No hay ítems registrados en este filtro.</p>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="p-4 bg-[#0e1a24]/50 border-t border-[#1e3848] text-center">

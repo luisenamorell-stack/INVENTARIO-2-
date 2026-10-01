@@ -95,26 +95,24 @@ const ReconciliationRow = React.memo(({
 }) => {
   return (
     <TableRow className="hover:bg-[#1e3240]/30 border-[#1e3848]/50 h-16 group transition-colors">
-      <TableCell className="sticky left-0 bg-[#12222e] border-r border-[#1e3848]/50 z-10 min-w-[200px] sm:min-w-[240px] pl-4 sm:pl-6">
+      <TableCell className="sticky left-0 bg-[#12222e] border-r border-[#1e3848]/50 z-10 min-w-[140px] sm:min-w-[240px] pl-3 sm:pl-6">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex flex-col gap-1 shrink-0">
-            <button className="p-1.5 rounded bg-[#091016] text-gray-500 hover:text-[#38bdf8] transition-colors" onClick={() => onOpenHistory(id, name)} title="Ver Historial"><History className="h-3 w-3" /></button>
-            <button className="p-1.5 rounded bg-[#091016] text-gray-500 hover:text-rose-500 transition-colors hidden sm:block" onClick={() => onDeleteProductData(id, name)} title="Eliminar registro">
-              <Trash2 className="h-3 w-3" />
-            </button>
+            <button className="p-1 rounded sm:p-1.5 bg-[#091016] text-gray-500 hover:text-[#38bdf8] transition-colors" onClick={() => onOpenHistory(id, name)} title="Ver Historial"><History className="h-3 w-3" /></button>
           </div>
           <div className="flex flex-col truncate">
             <span className="font-bold text-[10px] sm:text-xs text-white uppercase tracking-wide truncate leading-tight group-hover:text-[#38bdf8] transition-colors">{name}</span>
-            <span className="text-[9px] text-gray-500 font-bold tracking-widest uppercase mt-0.5">{sku}</span>
+            <span className="text-[8px] text-gray-500 font-bold tracking-widest uppercase mt-0.5">{sku}</span>
           </div>
         </div>
       </TableCell>
+      <TableCell className="text-center font-black text-[#38bdf8] bg-[#091016]/20 border-r border-[#1e3848]/30 text-xs sm:text-sm px-2 min-w-[60px]">{finalStock}</TableCell>
       {isCamion && (
         <TableCell className="text-center bg-[#091016]/10 font-bold text-emerald-500 text-xs sm:text-sm border-r border-[#1e3848]/30 px-1">{entries || '-'}</TableCell>
       )}
       {isCamion ? (
         salesByDay.map((daySale, idx) => (
-          <TableCell key={idx} className="p-0 border-r border-[#1e3848]/30 text-center min-w-[50px] sm:min-w-[70px]">
+          <TableCell key={idx} className="p-0 border-r border-[#1e3848]/30 text-center min-w-[50px] sm:min-w-[70px] hidden md:table-cell">
             <input 
               type="number" 
               className="h-10 w-full text-center border-none bg-transparent hover:bg-[#0e1a24] focus:bg-[#091016] text-white font-bold text-xs sm:text-sm p-0 transition-colors outline-none"
@@ -128,9 +126,8 @@ const ReconciliationRow = React.memo(({
           </TableCell>
         ))
       ) : null}
-      <TableCell className="text-center font-bold text-white bg-[#091016]/10 border-r border-[#1e3848]/30 text-xs sm:text-sm">{finalStock}</TableCell>
-      <TableCell className="text-right font-bold border-r border-[#1e3848]/30 whitespace-nowrap text-[9px] sm:text-[11px] text-gray-500 pr-2 sm:pr-4 hidden xs:table-cell">L. {totalValue.toLocaleString('es-HN', { minimumFractionDigits: 0 })}</TableCell>
-      <TableCell className="text-right sticky right-0 bg-[#12222e] border-l border-[#1e3848]/50 z-10 p-2 sm:p-4 min-w-[140px] sm:min-w-[180px] pr-4 sm:pr-6">
+      <TableCell className="text-right font-bold border-r border-[#1e3848]/30 whitespace-nowrap text-[9px] sm:text-[11px] text-gray-500 pr-2 sm:pr-4 hidden lg:table-cell">L. {totalValue.toLocaleString('es-HN', { minimumFractionDigits: 0 })}</TableCell>
+      <TableCell className="text-right sticky right-0 bg-[#12222e] border-l border-[#1e3848]/50 z-10 p-2 sm:p-4 min-w-[120px] sm:min-w-[180px] pr-3 sm:pr-6">
         <div className="flex items-center gap-1.5 sm:gap-2 justify-end">
           <input type="number" className="h-8 w-10 sm:h-9 sm:w-14 text-center px-1 text-[10px] sm:text-xs bg-[#091016] border border-[#1e3848] rounded focus:border-[#38bdf8] font-bold text-white outline-none" value={qtyInput} onChange={e => onUpdateInput(id, e.target.value)} />
           <div className="flex flex-col gap-0.5 sm:gap-1">
@@ -235,7 +232,7 @@ export default function ReconciliacionPage() {
         default: return 0;
       }
     })
-  }, [products, inventory, movements, deferredSearchQuery, showOnlyStocked, weekDays, sortBy])
+  }, [products, inventory, movements, deferredSearchQuery, weekDays, sortBy])
 
   const handleRegisterMovement = useCallback((productId: string, productName: string, type: 'Entry' | 'Exit') => {
     const qtyInput = qtyInputs[productId] || "1";
@@ -383,15 +380,15 @@ export default function ReconciliacionPage() {
             <Table>
               <TableHeader className="bg-[#0e1a24]">
                 <TableRow className="hover:bg-transparent border-[#1e3848] h-12">
-                  <TableHead className="w-[240px] sticky left-0 bg-[#0e1a24] border-r border-[#1e3848] text-[10px] font-bold uppercase tracking-widest text-[#00a896] pl-6 z-20">Producto</TableHead>
+                  <TableHead className="w-[140px] sm:w-[240px] sticky left-0 bg-[#0e1a24] border-r border-[#1e3848] text-[10px] font-bold uppercase tracking-widest text-[#00a896] pl-6 z-20">Producto</TableHead>
+                  <TableHead className="text-center text-[10px] font-bold uppercase tracking-widest text-[#38bdf8] border-r border-[#1e3848] min-w-[60px]">Stock</TableHead>
                   {isCamion && (
                     <TableHead className="text-center text-[10px] font-bold uppercase tracking-widest text-emerald-500 border-r border-[#1e3848]">Carga</TableHead>
                   )}
                   {isCamion ? weekDays.map((d,idx) => (
-                    <TableHead key={idx} className="text-center border-r border-[#1e3848] text-[10px] font-bold uppercase tracking-widest min-w-[70px] text-gray-400">{format(d, 'eee', {locale:es})}</TableHead>
+                    <TableHead key={idx} className="text-center border-r border-[#1e3848] text-[10px] font-bold uppercase tracking-widest min-w-[70px] text-gray-400 hidden md:table-cell">{format(d, 'eee', {locale:es})}</TableHead>
                   )) : null}
-                  <TableHead className="text-center text-[10px] font-bold uppercase tracking-widest text-[#38bdf8] border-r border-[#1e3848]">Stock</TableHead>
-                  <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest text-gray-400 pr-6">Valor</TableHead>
+                  <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest text-gray-400 pr-6 hidden lg:table-cell">Valor</TableHead>
                   <TableHead className="text-right sticky right-0 bg-[#0e1a24] border-l border-[#1e3848] text-[10px] font-bold uppercase tracking-widest text-gray-400 pr-6 z-20">Acción</TableHead>
                 </TableRow>
               </TableHeader>
