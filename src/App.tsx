@@ -7,6 +7,7 @@ import { Separator } from '@/src/components/ui/separator';
 import { ModeToggle } from '@/src/components/mode-toggle';
 import { Breadcrumbs } from '@/src/components/layout/breadcrumbs';
 import { WifiOff, Loader2, PackageSearch, Cloud, Sun, Moon, Search, Plus } from 'lucide-react';
+import { PWAInstallButton } from '@/src/components/pwa-install-button';
 
 // Lazy load pages
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -84,6 +85,7 @@ function AppLayout() {
           </div>
 
           <div className="flex items-center gap-6 shrink-0">
+            <PWAInstallButton />
             <div className="flex items-center gap-3">
               {isOnline ? (
                 <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#00a896]/10 text-[#00a896] border border-[#00a896]/20">

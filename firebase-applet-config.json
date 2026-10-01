@@ -1,12 +1,12 @@
 {
   "projectId": "control-inventario-cmr",
-  "appId": "1:552659640435:web:f47c40e2933ad918960a06",
+  "appId": "1:552659640435:web:53e780ec3d907215960a06",
   "apiKey": "AIzaSyBsCqEj2ucurc6H6_Y39L3NVDbYT7bb_7k",
   "authDomain": "control-inventario-cmr.firebaseapp.com",
-  "firestoreDatabaseId": "(default)",
+  "firestoreDatabaseId": "ai-studio-stockflowpro-de87f8ab-192d-4ad3-b763-871eba637d9d",
   "storageBucket": "control-inventario-cmr.firebasestorage.app",
   "messagingSenderId": "552659640435",
   "measurementId": "",
-  "oAuthClientId": "",
+  "oAuthClientId": "552659640435-8evnspf0dcgqaogq8r8uokgs2aabr9cj.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }
