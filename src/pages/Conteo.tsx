@@ -15,7 +15,10 @@ import {
   Play,
   RotateCcw,
   Volume2,
-  Package
+  Package,
+  FileText,
+  Download,
+  ClipboardList
 } from "lucide-react"
 import { PageShell } from "@/src/components/layout/page-shell"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
@@ -204,6 +207,13 @@ interface ResumenConteo {
   sobrantes: number;
 }
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog"
+
 export default function ConteoPage() {
   const firestore = useFirestore()
   const { toast } = useToast()
@@ -225,6 +235,7 @@ export default function ConteoPage() {
   const [lastScannedProduct, setLastScannedProduct] = useState<ScannedItem | null>(null)
   const [isApplying, setIsApplying] = useState(false)
   const [filtro, setFiltro] = useState<'todos' | 'faltantes' | 'discrepancias'>('todos')
+  const [showReport, setShowCameraReport] = useState(false)
   const lastScannedRef = useRef<{ code: string, time: number } | null>(null)
 
   // Fetch inventory for selected warehouse
@@ -313,8 +324,51 @@ export default function ConteoPage() {
       toast({ title: "Error", description: "Seleccione una ubicación para iniciar", variant: "destructive" });
       return;
     }
+    
+    // Pre-populate scannedItems with products that have system stock > 0
+    const initialItems: Record<string, ScannedItem> = {};
+    products?.forEach(p => {
+      const systemQty = warehouseInventory[p.id] || 0;
+      if (systemQty > 0) {
+        initialItems[p.id] = {
+          productId: p.id,
+          sku: p.sku,
+          name: p.name,
+          systemStock: systemQty,
+          countedStock: 0,
+          lastScanned: 0,
+          diferencia: -systemQty,
+          estado: 'faltante'
+        };
+      }
+    });
+    
+    setScannedItems(initialItems);
     setIsCounting(true);
     setTimeout(() => inputRef.current?.focus(), 500);
+  };
+
+  const handleUpdateQuantity = (productId: string, newQty: string) => {
+    const qty = parseInt(newQty) || 0;
+    setScannedItems(prev => {
+      const item = prev[productId];
+      if (!item) return prev;
+      
+      const diferencia = qty - item.systemStock;
+      let estado: 'cuadrado' | 'faltante' | 'sobrante' = 'cuadrado';
+      if (diferencia < 0) estado = 'faltante';
+      if (diferencia > 0) estado = 'sobrante';
+
+      const updated = {
+        ...item,
+        countedStock: qty,
+        diferencia,
+        estado,
+        lastScanned: Date.now() // Update to bring to top
+      };
+      
+      return { ...prev, [productId]: updated };
+    });
   };
 
   const applyAdjustments = async () => {
@@ -647,6 +701,12 @@ export default function ConteoPage() {
                   >
                     Ver Descalces ({resumen.faltantes + resumen.sobrantes})
                   </button>
+                  <button 
+                    onClick={() => setShowCameraReport(true)}
+                    className="ml-auto flex items-center gap-2 px-4 py-1.5 bg-[#12222e] border border-[#38bdf8]/30 text-[#38bdf8] rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-[#38bdf8]/10 transition-all"
+                  >
+                    <FileText className="h-3 w-3" /> Reporte
+                  </button>
                 </div>
               </div>
 
@@ -672,7 +732,14 @@ export default function ConteoPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-center font-bold text-gray-400 text-[10px] sm:text-xs">{item.systemStock}</TableCell>
-                        <TableCell className="text-center font-black text-[#38bdf8] text-xs sm:text-sm">{item.countedStock}</TableCell>
+                        <TableCell className="text-center p-0">
+                          <input 
+                            type="number"
+                            className="h-14 w-full bg-transparent text-center font-black text-[#38bdf8] text-xs sm:text-sm outline-none border-none focus:bg-[#38bdf8]/5 transition-colors"
+                            value={item.countedStock}
+                            onChange={(e) => handleUpdateQuantity(item.productId, e.target.value)}
+                          />
+                        </TableCell>
                         <TableCell className="text-center">
                           <span className={`text-[10px] sm:text-xs font-bold ${item.diferencia === 0 ? 'text-gray-500' : item.diferencia > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                             {item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia}
@@ -728,9 +795,14 @@ export default function ConteoPage() {
                           <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1">Sist.</p>
                           <p className="text-xs font-bold text-gray-400">{item.systemStock}</p>
                         </div>
-                        <div className="bg-[#091016] border border-[#38bdf8]/30 rounded-lg p-2 text-center">
+                        <div className="bg-[#091016] border border-[#38bdf8]/30 rounded-lg p-2 text-center relative">
                           <p className="text-[8px] font-bold text-[#38bdf8] uppercase tracking-widest mb-1">Cont.</p>
-                          <p className="text-xs font-black text-white">{item.countedStock}</p>
+                          <input 
+                            type="number"
+                            className="w-full bg-transparent text-center text-xs font-black text-white outline-none border-none p-0"
+                            value={item.countedStock}
+                            onChange={(e) => handleUpdateQuantity(item.productId, e.target.value)}
+                          />
                         </div>
                         <div className={cn(
                           "bg-[#091016] border rounded-lg p-2 text-center",
@@ -788,6 +860,130 @@ export default function ConteoPage() {
           </button>
         </div>
       )}
+
+      {/* Printable Report Dialog */}
+      <Dialog open={showReport} onOpenChange={setShowCameraReport}>
+        <DialogContent className="max-w-4xl bg-[#12222e] border-[#1e3848] text-white shadow-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+          <DialogHeader className="p-6 bg-[#0e1a24]/50 border-b border-[#1e3848] shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-xl font-bold text-[#38bdf8] uppercase tracking-tight flex items-center gap-3">
+                <FileText className="h-6 w-6" /> Resumen de Auditoría Física
+              </DialogTitle>
+              <button 
+                onClick={() => window.print()}
+                className="flex items-center gap-2 px-4 py-2 bg-[#2a7b9b] hover:bg-[#236883] text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg"
+              >
+                <Download className="h-3.5 w-3.5" /> Imprimir
+              </button>
+            </div>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-8">
+            {/* Header info */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-[#091016] p-4 rounded-xl border border-[#1e3848]">
+                <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1">Ubicación</p>
+                <p className="text-xs font-bold text-white uppercase">{warehouses?.find(w => w.id === selectedWarehouseId)?.name || "N/A"}</p>
+              </div>
+              <div className="bg-[#091016] p-4 rounded-xl border border-[#1e3848]">
+                <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1">Fecha de Auditoría</p>
+                <p className="text-xs font-bold text-white">{new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+              </div>
+              <div className="bg-[#091016] p-4 rounded-xl border border-[#1e3848]">
+                <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1">Total Ítems</p>
+                <p className="text-xs font-bold text-white">{resumen.totalItems}</p>
+              </div>
+              <div className="bg-[#091016] p-4 rounded-xl border border-[#1e3848]">
+                <p className="text-[8px] font-bold text-[#00a896] uppercase tracking-widest mb-1">Precisión</p>
+                <p className="text-xs font-bold text-white">{resumen.totalItems > 0 ? ((resumen.cuadrados / resumen.totalItems) * 100).toFixed(1) : 0}% OK</p>
+              </div>
+            </div>
+
+            {/* Missing items section */}
+            {resumen.faltantes > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-rose-500 font-bold uppercase tracking-widest text-[10px]">
+                  <AlertCircle className="h-4 w-4" /> Alerta de Faltantes ({resumen.faltantes})
+                </div>
+                <div className="bg-[#091016] rounded-xl border border-rose-500/20 overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-rose-500/5">
+                      <TableRow className="border-rose-500/10 hover:bg-transparent">
+                        <TableHead className="text-[9px] uppercase font-bold text-rose-500/70">CÓD / SKU</TableHead>
+                        <TableHead className="text-[9px] uppercase font-bold text-rose-500/70">Producto</TableHead>
+                        <TableHead className="text-center text-[9px] uppercase font-bold text-rose-500/70">Sist.</TableHead>
+                        <TableHead className="text-center text-[9px] uppercase font-bold text-rose-500/70">Falt.</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(Object.values(scannedItems) as ScannedItem[]).filter(i => i.estado === 'faltante').map(item => (
+                        <TableRow key={item.productId} className="border-rose-500/10 hover:bg-rose-500/5">
+                          <TableCell className="font-mono text-[10px] text-rose-400">{item.sku}</TableCell>
+                          <TableCell className="text-[10px] font-bold uppercase text-white">{item.name}</TableCell>
+                          <TableCell className="text-center text-[10px] text-gray-500">{item.systemStock}</TableCell>
+                          <TableCell className="text-center text-[10px] font-black text-rose-500">{Math.abs(item.diferencia)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            {/* General table */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                <ClipboardList className="h-4 w-4" /> Detalle Completo de Auditoría
+              </div>
+              <div className="bg-[#091016] rounded-xl border border-[#1e3848] overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-[#0e1a24]">
+                    <TableRow className="border-[#1e3848] hover:bg-transparent">
+                      <TableHead className="text-[9px] uppercase font-bold text-gray-500">CÓD / SKU</TableHead>
+                      <TableHead className="text-[9px] uppercase font-bold text-gray-500">Producto</TableHead>
+                      <TableHead className="text-center text-[9px] uppercase font-bold text-gray-500">Sist.</TableHead>
+                      <TableHead className="text-center text-[9px] uppercase font-bold text-[#38bdf8]">Aud.</TableHead>
+                      <TableHead className="text-center text-[9px] uppercase font-bold text-gray-500">Dif.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(Object.values(scannedItems) as ScannedItem[]).sort((a,b) => a.name.localeCompare(b.name)).map(item => (
+                      <TableRow key={item.productId} className="border-[#1e3848]/50 hover:bg-[#12222e]">
+                        <TableCell className="font-mono text-[10px] text-gray-500">{item.sku}</TableCell>
+                        <TableCell className="text-[10px] font-bold uppercase text-white">{item.name}</TableCell>
+                        <TableCell className="text-center text-[10px] text-gray-500">{item.systemStock}</TableCell>
+                        <TableCell className="text-center text-[10px] font-black text-white">{item.countedStock}</TableCell>
+                        <TableCell className="text-center">
+                          <span className={`text-[10px] font-bold ${item.diferencia === 0 ? 'text-gray-600' : item.diferencia > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6 bg-[#0e1a24]/50 border-t border-[#1e3848] flex justify-end gap-3 shrink-0">
+             <button 
+              onClick={() => setShowCameraReport(false)}
+              className="px-6 py-2 border border-[#1e3848] hover:bg-[#182c3c] text-gray-400 font-bold rounded-lg transition-all uppercase tracking-widest text-[10px]"
+            >
+              Cerrar Vista
+            </button>
+            <button 
+              onClick={applyAdjustments}
+              disabled={isApplying}
+              className="bg-[#00a896] hover:bg-[#008f7e] text-white px-8 py-2 rounded-lg font-bold text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-[#00a896]/20 transition-all flex items-center gap-2"
+            >
+              {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              Aplicar Ajustes y Finalizar
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </PageShell>
   );
 }
