@@ -49,6 +49,7 @@ import {
 import { Badge } from "@/src/components/ui/badge"
 import { Textarea } from "@/src/components/ui/textarea"
 import { useToast } from "@/src/hooks/use-toast"
+import { cn } from "@/src/lib/utils"
 import { useFirestore, useCollection, useMemoFirebase } from "@/src/firebase"
 import { collection, doc, serverTimestamp, collectionGroup } from "firebase/firestore"
 import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/src/firebase/non-blocking-updates"
@@ -93,34 +94,34 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
 
     const startScanner = async () => {
       try {
-        const videoInputDevices = await reader.listVideoInputDevices();
-        
-        // Better back camera detection
-        const backCamera = videoInputDevices.find(device => {
-          const label = device.label.toLowerCase();
-          return label.includes('back') || 
-                 label.includes('rear') || 
-                 label.includes('trasera') || 
-                 label.includes('environment') ||
-                 label.includes('externa');
-        }) || (videoInputDevices.length > 1 ? videoInputDevices[videoInputDevices.length - 1] : videoInputDevices[0]);
+        // Use constraints directly for better compatibility
+        const constraints: MediaStreamConstraints = {
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { min: 1280, ideal: 1920 },
+            height: { min: 720, ideal: 1080 }
+          }
+        };
 
-        if (backCamera && videoRef.current) {
-          await reader.decodeFromVideoDevice(backCamera.deviceId, videoRef.current, (result) => {
+        if (videoRef.current) {
+          await reader.decodeFromConstraints(constraints, videoRef.current, (result) => {
             if (result) {
               setSuccessFlash(true);
               onScanRef.current(result.getText());
             }
           });
 
-          const stream = videoRef.current.srcObject as MediaStream;
-          const track = stream?.getVideoTracks()[0];
-          if (track) {
-            const capabilities = track.getCapabilities() as any;
-            if (capabilities.torch) {
-              setHasTorch(true);
+          // Torch check with delay to ensure stream is active
+          setTimeout(() => {
+            const stream = videoRef.current?.srcObject as MediaStream;
+            const track = stream?.getVideoTracks()[0];
+            if (track) {
+              const capabilities = track.getCapabilities() as any;
+              if (capabilities.torch) {
+                setHasTorch(true);
+              }
             }
-          }
+          }, 1000);
         }
       } catch (err) {
         console.error("Scanner Error:", err);
