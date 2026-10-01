@@ -85,11 +85,16 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
     const startScanner = async () => {
       try {
         const videoInputDevices = await reader.listVideoInputDevices();
-        const backCamera = videoInputDevices.find(device => 
-          device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('rear') ||
-          device.label.toLowerCase().includes('entorno')
-        ) || videoInputDevices[0];
+        
+        // Better back camera detection
+        const backCamera = videoInputDevices.find(device => {
+          const label = device.label.toLowerCase();
+          return label.includes('back') || 
+                 label.includes('rear') || 
+                 label.includes('trasera') || 
+                 label.includes('environment') ||
+                 label.includes('externa');
+        }) || (videoInputDevices.length > 1 ? videoInputDevices[videoInputDevices.length - 1] : videoInputDevices[0]);
 
         if (backCamera && videoRef.current) {
           await reader.decodeFromVideoDevice(backCamera.deviceId, videoRef.current, (result) => {
