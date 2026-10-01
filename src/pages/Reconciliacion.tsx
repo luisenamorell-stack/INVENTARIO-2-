@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useDeferredValue, useState, useCallback } from "react"
+// Re-order imports and add Card components if needed
 import { 
   Search, 
   Download,
@@ -13,7 +14,9 @@ import {
   Trash2,
   History,
   SortAsc,
-  ArrowDownNarrowWide
+  ArrowDownNarrowWide,
+  Plus,
+  Minus
 } from "lucide-react"
 import { Button } from "@/src/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card"
@@ -377,16 +380,17 @@ export default function ReconciliacionPage() {
           </div>
           
           <div className="overflow-x-auto custom-scrollbar">
-            <Table>
+            {/* Vista de Escritorio (Tabla) */}
+            <Table className="hidden md:table">
               <TableHeader className="bg-[#0e1a24]">
                 <TableRow className="hover:bg-transparent border-[#1e3848] h-12">
-                  <TableHead className="w-[140px] sm:w-[240px] sticky left-0 bg-[#0e1a24] border-r border-[#1e3848] text-[10px] font-bold uppercase tracking-widest text-[#00a896] pl-6 z-20">Producto</TableHead>
+                  <TableHead className="w-[240px] sticky left-0 bg-[#0e1a24] border-r border-[#1e3848] text-[10px] font-bold uppercase tracking-widest text-[#00a896] pl-6 z-20">Producto</TableHead>
                   <TableHead className="text-center text-[10px] font-bold uppercase tracking-widest text-[#38bdf8] border-r border-[#1e3848] min-w-[60px]">Stock</TableHead>
                   {isCamion && (
                     <TableHead className="text-center text-[10px] font-bold uppercase tracking-widest text-emerald-500 border-r border-[#1e3848]">Carga</TableHead>
                   )}
                   {isCamion ? weekDays.map((d,idx) => (
-                    <TableHead key={idx} className="text-center border-r border-[#1e3848] text-[10px] font-bold uppercase tracking-widest min-w-[70px] text-gray-400 hidden md:table-cell">{format(d, 'eee', {locale:es})}</TableHead>
+                    <TableHead key={idx} className="text-center border-r border-[#1e3848] text-[10px] font-bold uppercase tracking-widest min-w-[70px] text-gray-400">{format(d, 'eee', {locale:es})}</TableHead>
                   )) : null}
                   <TableHead className="text-right text-[10px] font-bold uppercase tracking-widest text-gray-400 pr-6 hidden lg:table-cell">Valor</TableHead>
                   <TableHead className="text-right sticky right-0 bg-[#0e1a24] border-l border-[#1e3848] text-[10px] font-bold uppercase tracking-widest text-gray-400 pr-6 z-20">Acción</TableHead>
@@ -421,6 +425,62 @@ export default function ReconciliacionPage() {
                 ))}
               </TableBody>
             </Table>
+
+            {/* Vista Móvil (Tarjetas Stacked) */}
+            <div className="md:hidden divide-y divide-[#1e3848]/30">
+              {isProductsLoading || isMovementsLoading ? (
+                <div className="py-20 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-[#00a896]" />
+                </div>
+              ) : inventoryStats.length === 0 ? (
+                <div className="py-20 text-center text-gray-500 uppercase text-[10px] font-bold tracking-widest italic">
+                  Sin registros
+                </div>
+              ) : inventoryStats.map((item) => (
+                <div key={item.id} className="p-4 space-y-4 bg-transparent hover:bg-[#1e3240]/10 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col gap-1 pr-4">
+                      <div className="flex items-center gap-2">
+                        <button className="p-1.5 rounded bg-[#091016] text-[#38bdf8]" onClick={() => setHistoryDialog({isOpen:true, productId:item.id, productName:item.name})}>
+                          <History className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="font-bold text-xs text-white uppercase leading-tight">{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 ml-7">
+                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">CÓD:</span>
+                        <span className="text-xs font-black text-[#38bdf8] tracking-widest uppercase">{item.sku}</span>
+                      </div>
+                    </div>
+                    <div className="bg-[#091016] border border-[#38bdf8]/30 rounded-xl px-4 py-2 text-center min-w-[80px] shadow-lg shadow-[#38bdf8]/5">
+                      <p className="text-[8px] font-bold text-[#38bdf8] uppercase tracking-[0.2em] mb-0.5">Stock</p>
+                      <p className="text-xl font-black text-white">{item.finalStock}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <input 
+                      type="number" 
+                      className="h-10 flex-1 bg-[#091016] border border-[#1e3848] rounded-lg text-center text-white font-bold text-sm outline-none focus:border-[#38bdf8]" 
+                      placeholder="CANT."
+                      value={qtyInputs[item.id] || ""}
+                      onChange={e => setQtyInputs(prev => ({ ...prev, [item.id]: e.target.value }))}
+                    />
+                    <button 
+                      onClick={() => handleRegisterMovement(item.id, item.name, 'Entry')}
+                      className="h-10 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-600/10"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> CARGA
+                    </button>
+                    <button 
+                      onClick={() => handleRegisterMovement(item.id, item.name, 'Exit')}
+                      className="h-10 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg flex items-center gap-2 shadow-lg shadow-rose-600/10"
+                    >
+                      <Minus className="h-3.5 w-3.5" /> VENTA
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

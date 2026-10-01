@@ -708,7 +708,10 @@ export default function ConteoPage() {
                       <div className="flex justify-between items-start">
                         <div className="flex flex-col">
                           <span className="text-xs font-bold text-white uppercase tracking-tight leading-tight">{item.name}</span>
-                          <span className="text-[9px] font-mono text-[#38bdf8] font-bold mt-0.5">{item.sku}</span>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">CÓD:</span>
+                            <span className="text-xs font-black text-[#38bdf8] tracking-widest uppercase">{item.sku}</span>
+                          </div>
                         </div>
                         <Badge className={cn(
                           "text-[8px] uppercase tracking-widest font-black py-0.5 px-2",
