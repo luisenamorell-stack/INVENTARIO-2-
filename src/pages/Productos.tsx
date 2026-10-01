@@ -60,9 +60,17 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
-  const [lastScanTime, setLastScanTime] = useState(0);
+  const [successFlash, setSuccessFlash] = useState(false);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
+
+  // Flash timeout
+  useEffect(() => {
+    if (successFlash) {
+      const timer = setTimeout(() => setSuccessFlash(false), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [successFlash]);
 
   useEffect(() => {
     const hints = new Map();
@@ -100,8 +108,7 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
         if (backCamera && videoRef.current) {
           await reader.decodeFromVideoDevice(backCamera.deviceId, videoRef.current, (result) => {
             if (result) {
-              const now = Date.now();
-              setLastScanTime(now);
+              setSuccessFlash(true);
               onScanRef.current(result.getText());
             }
           });
@@ -112,18 +119,6 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
             const capabilities = track.getCapabilities() as any;
             if (capabilities.torch) {
               setHasTorch(true);
-            }
-            
-            try {
-              await track.applyConstraints({
-                advanced: [{ 
-                  focusMode: 'continuous',
-                  width: { min: 1280, ideal: 1920 },
-                  height: { min: 720, ideal: 1080 }
-                }]
-              } as any);
-            } catch (e) {
-              console.warn("Advanced constraints failed", e);
             }
           }
         }
@@ -160,12 +155,15 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
     <div className="relative w-full aspect-[16/9] bg-black rounded-xl overflow-hidden border border-[#1e3848] shadow-2xl group">
       <video 
         ref={videoRef} 
+        muted
+        playsInline
+        autoPlay
         className="w-full h-full object-cover"
       />
       <div className="absolute inset-0 border-[2px] border-[#38bdf8]/30 pointer-events-none" />
       <div className={cn(
         "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-1/2 border-2 rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none transition-all duration-300",
-        (Date.now() - lastScanTime < 500) ? "border-emerald-500 bg-emerald-500/20 scale-105" : "border-[#38bdf8] animate-pulse"
+        successFlash ? "border-emerald-500 bg-emerald-500/20 scale-105" : "border-[#38bdf8] animate-pulse"
       )} />
       
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-[#38bdf8] shadow-[0_0_10px_#38bdf8] animate-scan-line pointer-events-none" />
