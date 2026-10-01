@@ -155,7 +155,7 @@ export default function ReconciliacionPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({})
-  const [showOnlyStocked, setShowOnlyStocked] = useState(false)
+  const [showOnlyStocked, setShowOnlyStocked] = useState(true)
   const [sortBy, setSortBy] = useState<string>("name_asc")
   const [referenceDate, setReferenceDate] = useState(new Date())
   const [historyDialog, setHistoryDialog] = useState({ isOpen: false, productId: "", productName: "" })
@@ -488,13 +488,12 @@ export default function ReconciliacionPage() {
           </div>
 
           <div 
-            className="flex items-center justify-between p-4 bg-[#091016] border border-[#1e3848] rounded-lg cursor-pointer group"
-            onClick={() => setShowOnlyStocked(!showOnlyStocked)}
+            className="flex items-center justify-between p-4 bg-[#091016] border border-[#1e3848] rounded-lg opacity-50 grayscale pointer-events-none hidden"
           >
-            <span className="text-xs font-bold text-gray-400 uppercase group-hover:text-white transition-colors">Ver solo con Stock</span>
+            <span className="text-xs font-bold text-gray-400 uppercase">Filtrado Automático Activo</span>
             <Switch 
-              checked={showOnlyStocked} 
-              onCheckedChange={setShowOnlyStocked} 
+              checked={true} 
+              onCheckedChange={() => {}} 
               className="data-[state=checked]:bg-[#00a896]" 
             />
           </div>
