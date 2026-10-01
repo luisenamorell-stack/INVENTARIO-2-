@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useDeferredValue, useMemo, useCallback, useState, useEffect } from "react"
+import { useDeferredValue, useMemo, useCallback, useState, useEffect, useRef } from "react"
 import { 
   Plus, 
   Search, 
@@ -245,7 +245,7 @@ export default function ProductosPage() {
   const { data: warehouses } = useCollection(warehousesQuery)
   const { data: allInventory } = useCollection(allInventoryQuery)
 
-  const activeWarehouseIds = React.useMemo(() => new Set(warehouses?.map(w => w.id) || []), [warehouses])
+  const activeWarehouseIds = useMemo(() => new Set(warehouses?.map(w => w.id) || []), [warehouses])
 
   const [isAdding, setIsAdding] = useState(false)
   const [editingProductId, setEditingProductId] = useState<string | null>(null)

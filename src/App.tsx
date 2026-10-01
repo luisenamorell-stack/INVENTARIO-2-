@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/src/components/ui/sidebar';
 import { AppSidebar } from '@/src/components/layout/app-sidebar';
 import { Toaster } from '@/src/components/ui/toast';
@@ -38,6 +38,7 @@ export default function App() {
 
 function AppLayout() {
   const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+  const location = useLocation();
 
   React.useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -49,6 +50,9 @@ function AppLayout() {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  const hideFabPaths = ['/conteo', '/movimientos'];
+  const showFab = !hideFabPaths.includes(location.pathname);
 
   return (
     <>
@@ -124,13 +128,15 @@ function AppLayout() {
               </Routes>
 
               {/* Floating Action Button for Inventory Management */}
-              <Link 
-                to="/movimientos" 
-                className="fixed bottom-8 right-8 h-14 w-14 rounded-full bg-[#2a7b9b] text-white flex items-center justify-center shadow-2xl hover:scale-110 hover:bg-[#236883] transition-all z-[100] border-2 border-[#38bdf8]/20 group"
-                title="Registrar Movimiento Rápido"
-              >
-                <Plus className="h-6 w-6 group-hover:rotate-90 transition-transform duration-500" />
-              </Link>
+              {showFab && (
+                <Link 
+                  to="/movimientos" 
+                  className="fixed bottom-8 right-8 h-14 w-14 rounded-full bg-[#2a7b9b] text-white flex items-center justify-center shadow-2xl hover:scale-110 hover:bg-[#236883] transition-all z-[100] border-2 border-[#38bdf8]/20 group"
+                  title="Registrar Movimiento Rápido"
+                >
+                  <Plus className="h-6 w-6 group-hover:rotate-90 transition-transform duration-500" />
+                </Link>
+              )}
             </div>
           </React.Suspense>
         </div>

@@ -1,18 +1,16 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, getFirestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, memoryLocalCache, memoryLruGarbageCollector } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
 // Use initializeFirestore with forceLongPolling to avoid connectivity issues in some environments
-const dbId = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)' 
-  ? firebaseConfig.firestoreDatabaseId 
-  : undefined;
-
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-}, dbId as any);
+  ignoreUndefinedProperties: true,
+  localCache: memoryLocalCache({ garbageCollector: memoryLruGarbageCollector() })
+});
 
 export const auth = getAuth();
 export const firebaseApp = app;

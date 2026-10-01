@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { 
   ArrowUpRight, 
   ArrowDownLeft, 
@@ -39,6 +40,124 @@ import { Separator } from "@/src/components/ui/separator"
 import { ScrollArea } from "@/src/components/ui/scroll-area"
 
 import { PageShell } from "@/src/components/layout/page-shell"
+import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
+import { Zap, ZapOff, Camera, ScanBarcode } from "lucide-react"
+import { cn } from "@/src/lib/utils"
+
+const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+  const [hasTorch, setHasTorch] = useState(false);
+  const [isTorchOn, setIsTorchOn] = useState(false);
+  const [successFlash, setSuccessFlash] = useState(false);
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
+
+  useEffect(() => {
+    if (successFlash) {
+      const timer = setTimeout(() => setSuccessFlash(false), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [successFlash]);
+
+  useEffect(() => {
+    const hints = new Map();
+    const formats = [
+      BarcodeFormat.QR_CODE,
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.ITF,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E
+    ];
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+    hints.set(DecodeHintType.CHARACTER_SET, 'utf-8');
+
+    const reader = new BrowserMultiFormatReader(hints);
+    readerRef.current = reader;
+
+    const startScanner = async () => {
+      try {
+        const constraints: MediaStreamConstraints = {
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { min: 1280, ideal: 1920 },
+            height: { min: 720, ideal: 1080 }
+          }
+        };
+
+        if (videoRef.current) {
+          await reader.decodeFromConstraints(constraints, videoRef.current, (result) => {
+            if (result) {
+              setSuccessFlash(true);
+              onScanRef.current(result.getText());
+            }
+          });
+
+          setTimeout(() => {
+            const stream = videoRef.current?.srcObject as MediaStream;
+            const track = stream?.getVideoTracks()[0];
+            if (track) {
+              const capabilities = track.getCapabilities() as any;
+              if (capabilities.torch) {
+                setHasTorch(true);
+              }
+            }
+          }, 1000);
+        }
+      } catch (err) {
+        console.error("Scanner Error:", err);
+      }
+    };
+
+    startScanner();
+
+    return () => {
+      reader.reset();
+    };
+  }, []);
+
+  const toggleTorch = async () => {
+    if (!videoRef.current || !hasTorch) return;
+    const stream = videoRef.current.srcObject as MediaStream;
+    const track = stream?.getVideoTracks()[0];
+    if (track) {
+      try {
+        const nextState = !isTorchOn;
+        await track.applyConstraints({
+          advanced: [{ torch: nextState }]
+        } as any);
+        setIsTorchOn(nextState);
+      } catch (e) {
+        console.error("Torch Error:", e);
+      }
+    }
+  };
+
+  return (
+    <div className="relative w-full aspect-[16/9] md:aspect-[21/9] bg-black rounded-xl overflow-hidden border border-[#1e3848] shadow-2xl">
+      <video ref={videoRef} muted playsInline autoPlay className="w-full h-full object-cover" />
+      <div className="absolute inset-0 border-[2px] border-[#38bdf8]/30 pointer-events-none" />
+      <div className={cn(
+        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-1/2 border-2 rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none transition-all duration-300",
+        successFlash ? "border-emerald-500 bg-emerald-500/20 scale-105" : "border-[#38bdf8] animate-pulse"
+      )} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-[#38bdf8] shadow-[0_0_10px_#38bdf8] animate-scan-line pointer-events-none" />
+
+      {hasTorch && (
+        <button 
+          onClick={toggleTorch}
+          className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all ${isTorchOn ? 'bg-amber-500 text-white' : 'bg-black/50 text-gray-400 border border-white/10'}`}
+        >
+          {isTorchOn ? <Zap className="h-6 w-6" /> : <ZapOff className="h-6 w-6" />}
+        </button>
+      )}
+    </div>
+  );
+};
 
 export default function MovimientosPage() {
   const firestore = useFirestore()
@@ -50,18 +169,20 @@ export default function MovimientosPage() {
   const { data: products } = useCollection(productsQuery)
   const { data: warehouses } = useCollection(warehousesQuery)
 
-  const [items, setItems] = React.useState([{ id: Date.now(), productId: "", quantity: 1 }])
-  const [movementType, setMovementType] = React.useState<"Entry" | "Exit" | "Transfer">("Entry")
-  const [originWarehouseId, setOriginWarehouseId] = React.useState("")
-  const [destinationWarehouseId, setDestinationWarehouseId] = React.useState("")
-  const [authorizedBy, setAuthorizedBy] = React.useState("")
-  const [notes, setNotes] = React.useState("")
-  const [isProcessing, setIsProcessing] = React.useState(false)
-  const [folio, setFolio] = React.useState<string>("")
-  const [displayDate, setDisplayDate] = React.useState<string>("")
-  const [productSearch, setProductSearch] = React.useState("")
+  const [items, setItems] = useState([{ id: Date.now(), productId: "", quantity: 1 }])
+  const [movementType, setMovementType] = useState<"Entry" | "Exit" | "Transfer">("Entry")
+  const [originWarehouseId, setOriginWarehouseId] = useState("")
+  const [destinationWarehouseId, setDestinationWarehouseId] = useState("")
+  const [authorizedBy, setAuthorizedBy] = useState("")
+  const [notes, setNotes] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [folio, setFolio] = useState<string>("")
+  const [displayDate, setDisplayDate] = useState<string>("")
+  const [productSearch, setProductSearch] = useState("")
+  const [showScanner, setShowScanner] = useState(false)
+  const lastScannedRef = useRef<{ code: string, time: number } | null>(null)
 
-  const filteredGroupedProducts = React.useMemo(() => {
+  const filteredGroupedProducts = useMemo(() => {
     if (!products) return {}
     const search = productSearch.toLowerCase().trim()
     const groups: Record<string, any[]> = {}
@@ -80,7 +201,7 @@ export default function MovimientosPage() {
     return groups
   }, [products, productSearch])
 
-  React.useEffect(() => {
+  useEffect(() => {
     setFolio(Date.now().toString().slice(-6))
     setDisplayDate(new Date().toLocaleDateString())
   }, [])
@@ -98,6 +219,40 @@ export default function MovimientosPage() {
   const handleUpdateItem = (id: number, field: string, value: any) => {
     setItems(items.map(item => item.id === id ? { ...item, [field]: value } : item))
   }
+
+  const handleScan = useCallback((code: string) => {
+    if (!code || !products) return;
+    const cleanCode = code.trim();
+
+    // Throttling
+    const now = Date.now();
+    if (lastScannedRef.current?.code === cleanCode && (now - lastScannedRef.current.time) < 1500) return;
+    lastScannedRef.current = { code: cleanCode, time: now };
+
+    const product = products.find(p => p.sku === cleanCode || p.barcode === cleanCode);
+    if (product) {
+      setItems(prev => {
+        // If product already in list, increment quantity
+        const existingIndex = prev.findIndex(item => item.productId === product.id);
+        if (existingIndex > -1) {
+          const updated = [...prev];
+          updated[existingIndex].quantity = Number(updated[existingIndex].quantity) + 1;
+          return updated;
+        }
+        
+        // If first item is empty, use it
+        if (prev.length === 1 && !prev[0].productId) {
+          return [{ ...prev[0], productId: product.id, quantity: 1 }];
+        }
+        
+        // Otherwise append
+        return [...prev, { id: Date.now(), productId: product.id, quantity: 1 }];
+      });
+      toast({ title: "Producto Añadido", description: product.name, type: "success" });
+    } else {
+      toast({ title: "No Encontrado", description: `El código ${cleanCode} no existe.`, variant: "destructive" });
+    }
+  }, [products, toast]);
 
   const handleSubmit = async () => {
     if (!firestore) return
@@ -209,9 +364,21 @@ export default function MovimientosPage() {
           {/* Items List */}
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2 text-white font-bold uppercase tracking-wider">
-                <Package className="h-4 w-4 text-[#38bdf8]" />
-                <span className="text-sm">Detalle de Artículos</span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-white font-bold uppercase tracking-wider">
+                  <Package className="h-4 w-4 text-[#38bdf8]" />
+                  <span className="text-sm">Detalle de Artículos</span>
+                </div>
+                <button 
+                  onClick={() => setShowScanner(!showScanner)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all",
+                    showScanner ? "bg-amber-500 text-white border-amber-400" : "bg-[#091016] text-[#38bdf8] border-[#1e3848] hover:bg-[#1e3240]"
+                  )}
+                >
+                  {showScanner ? <ZapOff className="h-3 w-3" /> : <ScanBarcode className="h-3 w-3" />}
+                  {showScanner ? "Cerrar Escáner" : "Modo Escáner"}
+                </button>
               </div>
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500" />
@@ -224,6 +391,17 @@ export default function MovimientosPage() {
                 />
               </div>
             </div>
+
+            {showScanner && (
+              <div className="mb-6 animate-in zoom-in-95 fade-in duration-300">
+                <div className="flex items-center gap-2 mb-2">
+                   <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Escaneo de Carga/Salida Activo</span>
+                </div>
+                <BarcodeScanner onScan={handleScan} />
+                <p className="mt-2 text-center text-[9px] text-gray-500 italic">Cada escaneo suma +1 al artículo detectado</p>
+              </div>
+            )}
 
             <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
               {items.map((item, index) => (
