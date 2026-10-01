@@ -52,123 +52,100 @@ import { useToast } from "@/src/hooks/use-toast"
 import { useFirestore, useCollection, useMemoFirebase } from "@/src/firebase"
 import { collection, doc, serverTimestamp, collectionGroup } from "firebase/firestore"
 import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/src/firebase/non-blocking-updates"
-import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Zap, ZapOff, Wand2 } from "lucide-react"
 
 const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
+  const [scanner, setScanner] = useState<Html5Qrcode | null>(null);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
 
   useEffect(() => {
-    const hints = new Map();
-    const formats = [
-      BarcodeFormat.QR_CODE,
-      BarcodeFormat.CODE_128,
-      BarcodeFormat.CODE_39,
-      BarcodeFormat.EAN_13,
-      BarcodeFormat.EAN_8,
-      BarcodeFormat.ITF,
-      BarcodeFormat.UPC_A,
-      BarcodeFormat.UPC_E
-    ];
-    hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
-    hints.set(DecodeHintType.TRY_HARDER, true);
-    hints.set(DecodeHintType.CHARACTER_SET, 'utf-8');
+    const html5QrCode = new Html5Qrcode("reader-productos");
+    setScanner(html5QrCode);
 
-    const reader = new BrowserMultiFormatReader(hints);
-    readerRef.current = reader;
-
-    const startScanner = async () => {
-      try {
-        const videoInputDevices = await reader.listVideoInputDevices();
-        const backCamera = videoInputDevices.find(device => 
-          device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('rear') ||
-          device.label.toLowerCase().includes('entorno')
-        ) || videoInputDevices[0];
-
-        if (backCamera && videoRef.current) {
-          await reader.decodeFromVideoDevice(backCamera.deviceId, videoRef.current, (result) => {
-            if (result) {
-              onScanRef.current(result.getText());
-            }
-          });
-
-          const stream = videoRef.current.srcObject as MediaStream;
-          const track = stream?.getVideoTracks()[0];
-          if (track) {
-            const capabilities = track.getCapabilities() as any;
-            if (capabilities.torch) {
-              setHasTorch(true);
-            }
-            
-            try {
-              await track.applyConstraints({
-                advanced: [{ 
-                  focusMode: 'continuous',
-                  width: { min: 1280, ideal: 1920 },
-                  height: { min: 720, ideal: 1080 }
-                }]
-              } as any);
-            } catch (e) {
-              console.warn("Advanced constraints failed", e);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Scanner Error:", err);
+    const config = {
+      fps: 20,
+      qrbox: { width: 250, height: 150 },
+      aspectRatio: 1.0,
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.QR_CODE,
+      ],
+      videoConstraints: {
+        facingMode: "environment",
+        focusMode: "continuous",
+        width: { min: 1280, ideal: 1920 },
+        height: { min: 720, ideal: 1080 }
       }
     };
 
-    startScanner();
+    html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText) => {
+        onScanRef.current(decodedText);
+      },
+      (errorMessage) => {
+        // ignore
+      }
+    ).then(() => {
+      const track = html5QrCode.getRunningTrack();
+      if (track) {
+        const capabilities = track.getCapabilities() as any;
+        if (capabilities.torch) {
+          setHasTorch(true);
+        }
+      }
+    }).catch(err => {
+      console.error("Scanner error:", err);
+    });
 
     return () => {
-      reader.reset();
+      if (html5QrCode.isScanning) {
+        html5QrCode.stop().catch(e => console.error("Stop error", e));
+      }
     };
   }, []);
 
   const toggleTorch = async () => {
-    if (!videoRef.current || !hasTorch) return;
-    const stream = videoRef.current.srcObject as MediaStream;
-    const track = stream?.getVideoTracks()[0];
-    if (track) {
-      try {
-        const nextState = !isTorchOn;
-        await track.applyConstraints({
-          advanced: [{ torch: nextState }]
-        } as any);
-        setIsTorchOn(nextState);
-      } catch (e) {
-        console.error("Torch Error:", e);
-      }
+    if (!scanner || !hasTorch) return;
+    try {
+      const nextState = !isTorchOn;
+      await scanner.applyVideoConstraints({
+        advanced: [{ torch: nextState }]
+      } as any);
+      setIsTorchOn(nextState);
+    } catch (e) {
+      console.error("Torch Error:", e);
     }
   };
 
   return (
     <div className="relative w-full aspect-[16/9] bg-black rounded-xl overflow-hidden border border-[#1e3848] shadow-2xl group">
-      <video 
-        ref={videoRef} 
-        className="w-full h-full object-cover"
-      />
-      <div className="absolute inset-0 border-[2px] border-[#38bdf8]/30 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-1/2 border-2 border-[#38bdf8] rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none animate-pulse" />
+      <div id="reader-productos" className="w-full h-full" />
+      <div className="absolute inset-0 border-[2px] border-[#38bdf8]/30 pointer-events-none z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-1/2 border-2 border-[#38bdf8] rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none z-10 animate-pulse" />
       
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-[#38bdf8] shadow-[0_0_10px_#38bdf8] animate-scan-line pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-[#38bdf8] shadow-[0_0_10px_#38bdf8] animate-scan-line pointer-events-none z-10" />
 
       {hasTorch && (
         <button 
           onClick={toggleTorch}
-          className={`absolute bottom-4 right-4 p-2.5 rounded-full shadow-lg transition-all ${isTorchOn ? 'bg-amber-500 text-white' : 'bg-black/50 text-gray-400 border border-white/10'}`}
+          className={`absolute bottom-4 right-4 p-2.5 rounded-full shadow-lg transition-all z-20 ${isTorchOn ? 'bg-amber-500 text-white' : 'bg-black/50 text-gray-400 border border-white/10'}`}
         >
           {isTorchOn ? <Zap className="h-5 w-5" /> : <ZapOff className="h-5 w-5" />}
         </button>
       )}
 
-      <div className="absolute top-3 left-3 bg-black/60 px-2.5 py-0.5 rounded-full border border-[#38bdf8]/20">
+      <div className="absolute top-3 left-3 bg-black/60 px-2.5 py-0.5 rounded-full border border-[#38bdf8]/20 z-20">
         <span className="text-[8px] font-bold text-[#38bdf8] uppercase tracking-widest flex items-center gap-1.5">
           <div className="h-1 w-1 rounded-full bg-[#38bdf8] animate-pulse" />
           Scanner Active
