@@ -34,13 +34,13 @@ export default function ConfiguracionPage() {
     >
 
       <div className="col-span-12">
-        <div className="bg-[#12222e] border border-[#1e3848] rounded-xl p-6 shadow-lg flex gap-4 items-start">
-          <div className="h-10 w-10 rounded-lg bg-[#00a896]/10 flex items-center justify-center text-[#00a896] shrink-0">
-            <Info className="h-5 w-5" />
+        <div className="bg-[#12222e] border border-[#1e3848] rounded-xl p-4 sm:p-6 shadow-lg flex gap-3 sm:gap-4 items-start">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#00a896]/10 flex items-center justify-center text-[#00a896] shrink-0">
+            <Info className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">Nota sobre Actualizaciones</h4>
-            <p className="text-xs text-gray-400 leading-relaxed italic">
+            <h4 className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider mb-1">Nota sobre Actualizaciones</h4>
+            <p className="text-[10px] sm:text-xs text-gray-400 leading-relaxed italic">
               Tus precios e inventarios se sincronizan en tiempo real sin necesidad de publicar. 
               Solo es necesario publicar si se realizan cambios estructurales en el diseño o funciones principales.
             </p>

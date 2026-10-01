@@ -403,19 +403,20 @@ export default function MovimientosPage() {
               </div>
             )}
 
-            <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-3 sm:space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
               {items.map((item, index) => (
-                <div key={item.id} className="flex flex-col md:flex-row gap-4 items-center bg-[#091016]/40 p-4 rounded-xl border border-[#1e3848] group transition-all hover:border-[#38bdf8]/30">
-                  <div className="hidden md:block w-8 text-center text-[10px] font-bold text-gray-600">{String(index + 1).padStart(2, '0')}</div>
-                  <div className="flex-1 w-full">
+                <div key={item.id} className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center bg-[#091016]/40 p-3 sm:p-4 rounded-xl border border-[#1e3848] group transition-all hover:border-[#38bdf8]/30 relative">
+                  <div className="hidden sm:block w-8 text-center text-[10px] font-bold text-gray-600 shrink-0">{String(index + 1).padStart(2, '0')}</div>
+                  <div className="flex-1 min-w-0">
                     <Select value={item.productId} onValueChange={(v) => handleUpdateItem(item.id, "productId", v)}>
-                      <SelectTrigger className="w-full bg-[#091016] border border-[#1e3848] text-white text-xs h-10 px-4">
-                        <SelectValue placeholder="Seleccionar producto...">
+                      <SelectTrigger className="w-full bg-[#091016] border border-[#1e3848] text-white text-[11px] sm:text-xs h-10 px-3">
+                        <SelectValue placeholder="Elegir producto...">
                           {products?.find(p => p.id === item.productId) ? (
-                            <>
-                              <span className="font-mono text-[#38bdf8] mr-2">[{products.find(p => p.id === item.productId).sku}]</span> {products.find(p => p.id === item.productId).name}
-                            </>
-                          ) : "Seleccionar producto..."}
+                            <div className="flex items-center truncate">
+                              <span className="font-mono text-[#38bdf8] mr-2 shrink-0">[{products.find(p => p.id === item.productId).sku}]</span> 
+                              <span className="truncate">{products.find(p => p.id === item.productId).name}</span>
+                            </div>
+                          ) : "Elegir producto..."}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="max-h-[300px] bg-[#12222e] border-[#1e3848] text-white">
@@ -434,19 +435,19 @@ export default function MovimientosPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="w-full md:w-32 flex items-center gap-3">
-                    <div className="relative flex-1">
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="relative flex-1 sm:w-24">
                        <input 
                         type="number" 
                         value={item.quantity} 
                         onChange={e => handleUpdateItem(item.id, "quantity", e.target.value)} 
-                        className="w-full bg-[#091016] border border-[#1e3848] rounded-lg px-4 py-2 text-sm text-white text-center focus:border-[#00a896] outline-none font-bold" 
+                        className="w-full bg-[#091016] border border-[#1e3848] rounded-lg px-3 py-2 text-xs sm:text-sm text-white text-center focus:border-[#00a896] outline-none font-bold h-10" 
                       />
-                      <span className="absolute -top-2 left-3 bg-[#12222e] px-1 text-[8px] font-bold text-[#00a896] uppercase tracking-widest">CANT</span>
+                      <span className="absolute -top-2 left-2 bg-[#12222e] px-1 text-[7px] font-bold text-[#00a896] uppercase tracking-widest">CANT</span>
                     </div>
                     <button 
                       onClick={() => removeItem(item.id)}
-                      className="p-2 text-gray-500 hover:text-rose-500 transition-colors"
+                      className="p-2.5 text-gray-500 hover:text-rose-500 transition-colors bg-[#091016]/60 rounded-lg border border-[#1e3848] sm:border-none"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

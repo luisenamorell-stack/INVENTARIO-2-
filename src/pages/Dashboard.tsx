@@ -156,42 +156,41 @@ export default function Dashboard() {
     >
       {/* Columna Izquierda: Estadísticas y Actividad */}
       <div className="col-span-12 lg:col-span-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {loadingProducts || loadingWarehouses ? (
             [...Array(4)].map((_, i) => (
-              <div key={i} className="bg-gradient-to-br from-[#12222e] to-[#0e1a24] border border-[#1e3848] rounded-2xl p-6 shadow-xl">
-                <div className="flex items-center justify-between mb-6">
-                  <Skeleton className="h-10 w-10 rounded-xl" />
-                  <Skeleton className="h-4 w-12 rounded-full" />
+              <div key={i} className="bg-gradient-to-br from-[#12222e] to-[#0e1a24] border border-[#1e3848] rounded-2xl p-4 sm:p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <Skeleton className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl" />
+                  <Skeleton className="h-3 w-10 sm:h-4 sm:w-12 rounded-full" />
                 </div>
-                <div className="space-y-3">
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-8 w-24" />
-                  <Skeleton className="h-3 w-32" />
+                <div className="space-y-2 sm:space-y-3">
+                  <Skeleton className="h-2 w-16 sm:h-3 sm:w-20" />
+                  <Skeleton className="h-6 w-20 sm:h-8 sm:w-24" />
                 </div>
               </div>
             ))
           ) : stats.map((stat) => (
-            <div key={stat.title} className="bg-gradient-to-br from-[#12222e] to-[#0e1a24] border border-[#1e3848] rounded-2xl p-6 shadow-xl hover:border-[#38bdf8]/40 transition-all group relative overflow-hidden">
+            <div key={stat.title} className="bg-gradient-to-br from-[#12222e] to-[#0e1a24] border border-[#1e3848] rounded-2xl p-4 sm:p-6 shadow-xl hover:border-[#38bdf8]/40 transition-all group relative overflow-hidden">
               {/* Background accent */}
               <div className={cn("absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-5 blur-2xl transition-all group-hover:opacity-10", stat.bg)} />
               
-              <div className="flex items-center justify-between mb-6 relative z-10">
-                <div className={cn("p-2.5 rounded-xl bg-[#091016] border border-[#1e3848] text-[#38bdf8] group-hover:text-white group-hover:bg-[#38bdf8] transition-all duration-500 shadow-lg")}>
-                  <stat.icon className="h-5 w-5" />
+              <div className="flex items-center justify-between mb-4 sm:mb-6 relative z-10">
+                <div className={cn("p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-[#091016] border border-[#1e3848] text-[#38bdf8] group-hover:text-white group-hover:bg-[#38bdf8] transition-all duration-500 shadow-lg")}>
+                  <stat.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
                 <div className="flex flex-col items-end">
-                   <Badge className="bg-[#00a896]/10 text-[#00a896] border-none text-[8px] font-black tracking-widest uppercase px-2 py-0">Online</Badge>
+                   <Badge className="bg-[#00a896]/10 text-[#00a896] border-none text-[7px] sm:text-[8px] font-black tracking-widest uppercase px-1.5 py-0">Online</Badge>
                 </div>
               </div>
               
               <div className="flex flex-col relative z-10">
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">{stat.title}</p>
-                <h3 className="text-3xl font-black text-white mb-2 tracking-tight group-hover:scale-105 transition-transform origin-left duration-500">{stat.value}</h3>
-                <div className="flex items-center gap-2">
-                   <span className="text-[10px] text-[#00a896] font-bold uppercase tracking-tight">{stat.trend}</span>
-                   <span className="text-[9px] text-gray-600 font-medium">•</span>
-                   <span className="text-[9px] text-gray-600 font-bold uppercase tracking-tighter">{stat.description}</span>
+                <p className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-wider sm:tracking-[0.2em] mb-1">{stat.title}</p>
+                <h3 className="text-xl sm:text-3xl font-black text-white mb-1 sm:mb-2 tracking-tight group-hover:scale-105 transition-transform origin-left duration-500 truncate">{stat.value}</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                   <span className="text-[8px] sm:text-[10px] text-[#00a896] font-bold uppercase tracking-tight">{stat.trend}</span>
+                   <span className="hidden sm:inline text-[9px] text-gray-600 font-medium">•</span>
+                   <span className="text-[8px] sm:text-[9px] text-gray-600 font-bold uppercase tracking-tighter truncate">{stat.description}</span>
                 </div>
               </div>
             </div>
@@ -232,21 +231,21 @@ export default function Dashboard() {
               <div className="py-12 text-center text-gray-500 italic text-xs">Sin actividad reciente</div>
             ) : (
               movements?.map((m) => (
-                <div key={m.id} className="p-4 flex items-center justify-between hover:bg-[#0e1a24]/40 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${m.type === 'entrada' ? 'bg-[#00a896]/10 text-[#00a896]' : 'bg-rose-500/10 text-rose-500'}`}>
-                      {m.type === 'entrada' ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
+                <div key={m.id} className="p-3 sm:p-4 flex items-center justify-between hover:bg-[#0e1a24]/40 transition-colors">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center ${m.type === 'entrada' ? 'bg-[#00a896]/10 text-[#00a896]' : 'bg-rose-500/10 text-rose-500'}`}>
+                      {m.type === 'entrada' ? <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5" /> : <ArrowDownRight className="h-4 w-4 sm:h-5 sm:w-5" />}
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-200">{m.productName}</p>
-                      <p className="text-[10px] text-gray-500 uppercase font-semibold">{m.warehouseName}</p>
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm font-bold text-gray-200 truncate max-w-[120px] sm:max-w-none">{m.productName}</p>
+                      <p className="text-[8px] sm:text-[10px] text-gray-500 uppercase font-semibold truncate">{m.warehouseName}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-bold ${m.type === 'entrada' ? 'text-[#00a896]' : 'text-rose-500'}`}>
+                  <div className="text-right shrink-0">
+                    <p className={`text-xs sm:text-sm font-bold ${m.type === 'entrada' ? 'text-[#00a896]' : 'text-rose-500'}`}>
                       {m.type === 'entrada' ? '+' : '-'}{m.quantity}
                     </p>
-                    <p className="text-[9px] text-gray-600 font-bold uppercase">
+                    <p className="text-[8px] sm:text-[9px] text-gray-600 font-bold uppercase">
                       {m.timestamp?.toDate().toLocaleTimeString('es-HN', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -265,7 +264,7 @@ export default function Dashboard() {
             <h3 className="text-sm font-bold text-white uppercase tracking-wider">Ocupación de Unidades</h3>
           </div>
           
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {loadingWarehouses ? (
               <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-[#00a896]" /></div>
             ) : warehouses?.map((w) => {
@@ -276,21 +275,21 @@ export default function Dashboard() {
               const percentage = Math.min((currentStock / maxCapacity) * 100, 100);
               
               return (
-                <div key={w.id} className="space-y-2">
+                <div key={w.id} className="space-y-1.5 sm:space-y-2">
                   <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-xs font-bold text-gray-200 uppercase tracking-tight">{w.name}</p>
-                      <p className="text-[9px] text-gray-500 font-bold uppercase">{w.location}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs font-bold text-gray-200 uppercase tracking-tight truncate">{w.name}</p>
+                      <p className="text-[8px] sm:text-[9px] text-gray-500 font-bold uppercase truncate">{w.location}</p>
                     </div>
-                    <p className="text-xs font-bold text-[#38bdf8]">{percentage.toFixed(1)}%</p>
+                    <p className="text-[10px] sm:text-xs font-bold text-[#38bdf8] shrink-0">{percentage.toFixed(1)}%</p>
                   </div>
-                  <div className="h-2 w-full bg-[#091016] rounded-full overflow-hidden border border-[#1e3848]">
+                  <div className="h-1.5 sm:h-2 w-full bg-[#091016] rounded-full overflow-hidden border border-[#1e3848]">
                     <div 
                       className={`h-full transition-all duration-700 ${percentage > 90 ? 'bg-rose-500' : 'bg-[#00a896]'}`}
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <div className="flex justify-between items-center text-[9px] font-bold text-gray-600 uppercase">
+                  <div className="flex justify-between items-center text-[8px] sm:text-[9px] font-bold text-gray-600 uppercase">
                     <span>{currentStock} Unid.</span>
                     <span>Cap: {maxCapacity}</span>
                   </div>

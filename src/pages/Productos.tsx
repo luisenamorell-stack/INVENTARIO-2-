@@ -204,27 +204,27 @@ const ProductSkeleton = () => (
 const ProductRow = React.memo(({ prod, stock, onEdit, onDelete }: { prod: any, stock: number, onEdit: (p: any) => void, onDelete: (id: string) => void }) => {
   return (
     <TableRow className="hover:bg-[#1e3240]/30 border-[#1e3848]/50 h-16 group transition-colors">
-      <TableCell className="font-mono text-[11px] text-[#38bdf8] font-bold pl-6">
+      <TableCell className="font-mono text-[10px] sm:text-[11px] text-[#38bdf8] font-bold pl-4 sm:pl-6">
         <div className="flex flex-col">
           <span>{prod.sku}</span>
-          {prod.barcode && <span className="text-[8px] text-gray-500 font-normal">BAR: {prod.barcode}</span>}
+          {prod.barcode && <span className="text-[7px] sm:text-[8px] text-gray-500 font-normal hidden xs:block">BAR: {prod.barcode}</span>}
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="min-w-[120px] sm:min-w-0">
         <div className="flex flex-col">
-          <span className="font-bold text-xs text-white uppercase truncate">{prod.name}</span>
-          <span className="text-[9px] text-[#00a896] font-bold uppercase tracking-widest mt-0.5">{prod.category}</span>
+          <span className="font-bold text-[11px] sm:text-xs text-white uppercase truncate max-w-[100px] sm:max-w-none">{prod.name}</span>
+          <span className="text-[8px] sm:text-[9px] text-[#00a896] font-bold uppercase tracking-widest mt-0.5">{prod.category}</span>
         </div>
       </TableCell>
       <TableCell className="text-right">
-        <span className="text-xs font-bold text-gray-200">{stock} <span className="text-gray-500 text-[10px]">UD</span></span>
+        <span className="text-[11px] sm:text-xs font-bold text-gray-200">{stock} <span className="text-gray-500 text-[8px] sm:text-[10px]">UD</span></span>
       </TableCell>
-      <TableCell className="text-right text-gray-500 font-bold text-[11px]">L. {Number(prod.costPrice || 0).toLocaleString('es-HN')}</TableCell>
-      <TableCell className="text-right font-bold text-[#00a896] text-xs tracking-tight">L. {(stock * Number(prod.costPrice || 0)).toLocaleString('es-HN')}</TableCell>
-      <TableCell className="text-right pr-6">
-        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={() => onEdit(prod)} className="p-1.5 rounded bg-[#091016] text-[#38bdf8] hover:bg-[#1e3240] transition-colors"><Edit2 className="h-3.5 w-3.5" /></button>
-          <button onClick={() => onDelete(prod.id)} className="p-1.5 rounded bg-[#091016] text-rose-500 hover:bg-rose-500/20 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+      <TableCell className="text-right text-gray-500 font-bold text-[10px] sm:text-[11px] hidden sm:table-cell">L. {Number(prod.costPrice || 0).toLocaleString('es-HN')}</TableCell>
+      <TableCell className="text-right font-bold text-[#00a896] text-[11px] sm:text-xs tracking-tight pr-4 sm:pr-2">L. {(stock * Number(prod.costPrice || 0)).toLocaleString('es-HN')}</TableCell>
+      <TableCell className="text-right pr-4 sm:pr-6">
+        <div className="flex items-center justify-end gap-1.5 sm:gap-2 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onClick={() => onEdit(prod)} className="p-1.5 rounded bg-[#091016] text-[#38bdf8] hover:bg-[#1e3240] transition-colors"><Edit2 className="h-3 sm:h-3.5 w-3 sm:w-3.5" /></button>
+          <button onClick={() => onDelete(prod.id)} className="p-1.5 rounded bg-[#091016] text-rose-500 hover:bg-rose-500/20 transition-colors"><Trash2 className="h-3 sm:h-3.5 w-3 sm:w-3.5" /></button>
         </div>
       </TableCell>
     </TableRow>

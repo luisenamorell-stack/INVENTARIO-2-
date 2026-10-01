@@ -476,22 +476,22 @@ export default function ConteoPage() {
           {/* Panel Izquierdo: Escaneo y Estado */}
           <div className="col-span-12 lg:col-span-5 space-y-6">
             {/* Tarjetas de Resumen (Semáforo) */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-[#12222e] border border-[#1e3848] rounded-xl p-4 shadow-lg text-center">
-                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest block mb-1">Total Ítems</span>
-                <span className="text-2xl font-black text-white">{resumen.totalItems}</span>
+            <div className="grid grid-cols-2 xs:grid-cols-4 gap-2 sm:gap-4">
+              <div className="bg-[#12222e] border border-[#1e3848] rounded-xl p-3 sm:p-4 shadow-lg text-center">
+                <span className="text-[8px] sm:text-[9px] font-bold text-gray-500 uppercase tracking-widest block mb-0.5 sm:mb-1">Total</span>
+                <span className="text-xl sm:text-2xl font-black text-white">{resumen.totalItems}</span>
               </div>
-              <div className="bg-[#12222e] border border-[#00a896]/30 rounded-xl p-4 shadow-lg text-center">
-                <span className="text-[9px] font-bold text-[#00a896] uppercase tracking-widest block mb-1">Cuadrados 🟢</span>
-                <span className="text-2xl font-black text-[#00a896]">{resumen.cuadrados}</span>
+              <div className="bg-[#12222e] border border-[#00a896]/30 rounded-xl p-3 sm:p-4 shadow-lg text-center">
+                <span className="text-[8px] sm:text-[9px] font-bold text-[#00a896] uppercase tracking-widest block mb-0.5 sm:mb-1">OK 🟢</span>
+                <span className="text-xl sm:text-2xl font-black text-[#00a896]">{resumen.cuadrados}</span>
               </div>
-              <div className="bg-[#12222e] border border-rose-500/30 rounded-xl p-4 shadow-lg text-center">
-                <span className="text-[9px] font-bold text-rose-500 uppercase tracking-widest block mb-1">Faltantes 🔴</span>
-                <span className="text-2xl font-black text-rose-500">{resumen.faltantes}</span>
+              <div className="bg-[#12222e] border border-rose-500/30 rounded-xl p-3 sm:p-4 shadow-lg text-center">
+                <span className="text-[8px] sm:text-[9px] font-bold text-rose-500 uppercase tracking-widest block mb-0.5 sm:mb-1">Faltan 🔴</span>
+                <span className="text-xl sm:text-2xl font-black text-rose-500">{resumen.faltantes}</span>
               </div>
-              <div className="bg-[#12222e] border border-[#38bdf8]/30 rounded-xl p-4 shadow-lg text-center">
-                <span className="text-[9px] font-bold text-[#38bdf8] uppercase tracking-widest block mb-1">Sobrantes 🔵</span>
-                <span className="text-2xl font-black text-[#38bdf8]">{resumen.sobrantes}</span>
+              <div className="bg-[#12222e] border border-[#38bdf8]/30 rounded-xl p-3 sm:p-4 shadow-lg text-center">
+                <span className="text-[8px] sm:text-[9px] font-bold text-[#38bdf8] uppercase tracking-widest block mb-0.5 sm:mb-1">Sobran 🔵</span>
+                <span className="text-xl sm:text-2xl font-black text-[#38bdf8]">{resumen.sobrantes}</span>
               </div>
             </div>
 
@@ -653,45 +653,44 @@ export default function ConteoPage() {
                 <Table>
                   <TableHeader className="bg-[#0e1a24] sticky top-0 z-10">
                     <TableRow className="border-[#1e3848] hover:bg-transparent h-14">
-                      <TableHead className="text-[10px] font-bold uppercase text-gray-400 pl-6">Código</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase text-gray-400">Producto</TableHead>
-                      <TableHead className="text-center text-[10px] font-bold uppercase text-gray-400">Sistema</TableHead>
-                      <TableHead className="text-center text-[10px] font-bold uppercase text-[#38bdf8]">Contado</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase text-gray-400 pl-4 sm:pl-6">Producto</TableHead>
+                      <TableHead className="text-center text-[10px] font-bold uppercase text-gray-400">Sist.</TableHead>
+                      <TableHead className="text-center text-[10px] font-bold uppercase text-[#38bdf8]">Cont.</TableHead>
                       <TableHead className="text-center text-[10px] font-bold uppercase text-gray-400">Dif.</TableHead>
-                      <TableHead className="text-right text-[10px] font-bold uppercase text-gray-400 pr-6">Estado</TableHead>
+                      <TableHead className="text-right text-[10px] font-bold uppercase text-gray-400 pr-4 sm:pr-6">Estado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-[#1e3848]/30">
                     {itemsFiltrados.map((item) => (
                       <TableRow key={item.productId} className={`hover:bg-[#1e3240]/20 border-none transition-colors ${item.lastScanned === lastScannedProduct?.lastScanned ? 'bg-[#00a896]/5' : ''}`}>
-                        <TableCell className="pl-6 py-4 font-mono text-[10px] text-[#38bdf8] font-bold">
-                          {item.sku}
+                        <TableCell className="pl-4 sm:pl-6 py-3 sm:py-4">
+                          <div className="flex flex-col">
+                            <span className="text-[11px] sm:text-xs font-bold text-white uppercase truncate max-w-[100px] sm:max-w-[180px] block">{item.name}</span>
+                            <span className="text-[9px] font-mono text-[#38bdf8] font-medium">{item.sku}</span>
+                          </div>
                         </TableCell>
-                        <TableCell className="py-4">
-                          <span className="text-xs font-bold text-white uppercase truncate max-w-[180px] block">{item.name}</span>
-                        </TableCell>
-                        <TableCell className="text-center font-bold text-gray-400 text-xs">{item.systemStock}</TableCell>
-                        <TableCell className="text-center font-black text-[#38bdf8] text-sm">{item.countedStock}</TableCell>
+                        <TableCell className="text-center font-bold text-gray-400 text-[10px] sm:text-xs">{item.systemStock}</TableCell>
+                        <TableCell className="text-center font-black text-[#38bdf8] text-xs sm:text-sm">{item.countedStock}</TableCell>
                         <TableCell className="text-center">
-                          <span className={`text-xs font-bold ${item.diferencia === 0 ? 'text-gray-500' : item.diferencia > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                          <span className={`text-[10px] sm:text-xs font-bold ${item.diferencia === 0 ? 'text-gray-500' : item.diferencia > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                             {item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right pr-6">
+                        <TableCell className="text-right pr-4 sm:pr-6">
                           <div className="flex items-center justify-end gap-1.5">
                             {item.estado === 'cuadrado' && (
-                              <span className="text-[10px] font-bold text-[#00a896] uppercase flex items-center gap-1">
-                                🟢 Cuadrado
+                              <span className="text-[9px] sm:text-[10px] font-bold text-[#00a896] uppercase flex items-center gap-1">
+                                <div className="h-1.5 w-1.5 rounded-full bg-[#00a896]" /> <span className="hidden xs:inline">OK</span>
                               </span>
                             )}
                             {item.estado === 'faltante' && (
-                              <span className="text-[10px] font-bold text-rose-500 uppercase flex items-center gap-1">
-                                🔴 Faltan {Math.abs(item.diferencia)}
+                              <span className="text-[9px] sm:text-[10px] font-bold text-rose-500 uppercase flex items-center gap-1">
+                                <div className="h-1.5 w-1.5 rounded-full bg-rose-500" /> <span className="hidden xs:inline">Faltan</span> {Math.abs(item.diferencia)}
                               </span>
                             )}
                             {item.estado === 'sobrante' && (
-                              <span className="text-[10px] font-bold text-[#38bdf8] uppercase flex items-center gap-1">
-                                🔵 Sobran {item.diferencia}
+                              <span className="text-[9px] sm:text-[10px] font-bold text-[#38bdf8] uppercase flex items-center gap-1">
+                                <div className="h-1.5 w-1.5 rounded-full bg-[#38bdf8]" /> <span className="hidden xs:inline">Sobran</span> {item.diferencia}
                               </span>
                             )}
                           </div>

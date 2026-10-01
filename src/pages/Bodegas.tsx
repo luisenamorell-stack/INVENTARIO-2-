@@ -150,34 +150,34 @@ export default function BodegasPage() {
       ) : (
         <div className="col-span-12 grid gap-6 md:grid-cols-2">
           {warehouses?.map((wh) => (
-            <div key={wh.id} className="bg-[#12222e] border border-[#1e3848] rounded-xl overflow-hidden shadow-lg transition-all hover:border-[#38bdf8]/30 group">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 rounded-xl bg-[#091016] border border-[#1e3848] flex items-center justify-center text-[#38bdf8] shadow-inner group-hover:scale-105 transition-transform">
-                      {wh.type === 'Bodega' ? <Warehouse className="h-7 w-7" /> : <Truck className="h-7 w-7" />}
+            <div key={wh.id} className="bg-[#12222e] border border-[#1e3848] rounded-xl overflow-hidden shadow-lg transition-all hover:border-[#38bdf8]/40 group">
+              <div className="p-4 sm:p-6">
+                <div className="flex items-start justify-between mb-4 sm:mb-6">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-lg sm:rounded-xl bg-[#091016] border border-[#1e3848] flex items-center justify-center text-[#38bdf8] shadow-inner group-hover:scale-105 transition-transform">
+                      {wh.type === 'Bodega' ? <Warehouse className="h-5 w-5 sm:h-7 sm:w-7" /> : <Truck className="h-5 w-5 sm:h-7 sm:w-7" />}
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white uppercase tracking-tight leading-tight">{wh.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <MapPin className="h-3 w-3 text-[#00a896]" />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{wh.location}</span>
+                    <div className="min-w-0">
+                      <h3 className="text-sm sm:text-lg font-bold text-white uppercase tracking-tight leading-tight truncate max-w-[150px] sm:max-w-none">{wh.name}</h3>
+                      <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1">
+                        <MapPin className="h-2.5 w-2.5 text-[#00a896]" />
+                        <span className="text-[8px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{wh.location}</span>
                       </div>
                     </div>
                   </div>
-                  <div className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest ${wh.type === 'Bodega' ? 'bg-[#00a896]/10 text-[#00a896]' : 'bg-[#38bdf8]/10 text-[#38bdf8]'}`}>
+                  <div className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded sm:rounded-md text-[8px] sm:text-[9px] font-bold uppercase tracking-widest shrink-0 ${wh.type === 'Bodega' ? 'bg-[#00a896]/10 text-[#00a896]' : 'bg-[#38bdf8]/10 text-[#38bdf8]'}`}>
                     {wh.type || 'Bodega'}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-[#091016] border border-[#1e3848] rounded-lg p-4">
-                    <p className="text-[8px] font-bold text-gray-600 uppercase tracking-[0.2em] mb-1">Capacidad Máxima</p>
-                    <p className="text-sm font-bold text-white">{wh.capacity || 500} <span className="text-[10px] text-gray-500 uppercase font-semibold">Units</span></p>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <div className="bg-[#091016] border border-[#1e3848] rounded-lg p-2.5 sm:p-4">
+                    <p className="text-[7px] sm:text-[8px] font-bold text-gray-600 uppercase tracking-wider mb-0.5 sm:mb-1">Capacidad</p>
+                    <p className="text-xs sm:text-sm font-bold text-white">{wh.capacity || 500} <span className="text-[8px] sm:text-[10px] text-gray-500 uppercase font-semibold">Units</span></p>
                   </div>
-                  <div className="bg-[#091016] border border-[#1e3848] rounded-lg p-4">
-                    <p className="text-[8px] font-bold text-gray-600 uppercase tracking-[0.2em] mb-1">Estado Operativo</p>
-                    <p className="text-sm font-bold text-[#00a896]">ACTIVO</p>
+                  <div className="bg-[#091016] border border-[#1e3848] rounded-lg p-2.5 sm:p-4">
+                    <p className="text-[7px] sm:text-[8px] font-bold text-gray-600 uppercase tracking-wider mb-0.5 sm:mb-1">Estado</p>
+                    <p className="text-xs sm:text-sm font-bold text-[#00a896]">ACTIVO</p>
                   </div>
                 </div>
 
@@ -187,24 +187,24 @@ export default function BodegasPage() {
                   </p>
                 )}
 
-                <div className="flex items-center justify-between pt-6 border-t border-[#1e3848]">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 sm:pt-6 border-t border-[#1e3848]">
                   <div className="flex gap-2">
                     <button 
                       onClick={() => handleEdit(wh)}
-                      className="p-2 rounded-lg border border-[#1e3848] text-gray-500 hover:text-[#38bdf8] hover:bg-[#1e3240] transition-all"
+                      className="flex-1 sm:flex-none p-2.5 rounded-lg border border-[#1e3848] text-gray-500 hover:text-[#38bdf8] hover:bg-[#1e3240] transition-all flex justify-center items-center"
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
                     <button 
                       onClick={() => handleDelete(wh)}
-                      className="p-2 rounded-lg border border-[#1e3848] text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
+                      className="flex-1 sm:flex-none p-2.5 rounded-lg border border-[#1e3848] text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 transition-all flex justify-center items-center"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                   <Link 
                     to={`/reconciliacion?bodega=${wh.id}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#2a7b9b] hover:bg-[#236883] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all shadow-md"
+                    className="flex items-center justify-center gap-2 px-4 py-3 sm:py-2 bg-[#2a7b9b] hover:bg-[#236883] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all shadow-md active:scale-95"
                   >
                     Abrir Planilla <ArrowRight className="h-3.5 w-3.5" />
                   </Link>

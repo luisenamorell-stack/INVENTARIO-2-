@@ -95,29 +95,29 @@ const ReconciliationRow = React.memo(({
 }) => {
   return (
     <TableRow className="hover:bg-[#1e3240]/30 border-[#1e3848]/50 h-16 group transition-colors">
-      <TableCell className="sticky left-0 bg-[#12222e] border-r border-[#1e3848]/50 z-10 min-w-[240px] pl-6">
-        <div className="flex items-center gap-3">
+      <TableCell className="sticky left-0 bg-[#12222e] border-r border-[#1e3848]/50 z-10 min-w-[200px] sm:min-w-[240px] pl-4 sm:pl-6">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex flex-col gap-1 shrink-0">
             <button className="p-1.5 rounded bg-[#091016] text-gray-500 hover:text-[#38bdf8] transition-colors" onClick={() => onOpenHistory(id, name)} title="Ver Historial"><History className="h-3 w-3" /></button>
-            <button className="p-1.5 rounded bg-[#091016] text-gray-500 hover:text-rose-500 transition-colors" onClick={() => onDeleteProductData(id, name)} title="Eliminar registro">
+            <button className="p-1.5 rounded bg-[#091016] text-gray-500 hover:text-rose-500 transition-colors hidden sm:block" onClick={() => onDeleteProductData(id, name)} title="Eliminar registro">
               <Trash2 className="h-3 w-3" />
             </button>
           </div>
           <div className="flex flex-col truncate">
-            <span className="font-bold text-xs text-white uppercase tracking-wide truncate leading-tight group-hover:text-[#38bdf8] transition-colors">{name}</span>
-            <span className="text-[10px] text-gray-500 font-bold tracking-widest uppercase mt-0.5">{sku}</span>
+            <span className="font-bold text-[10px] sm:text-xs text-white uppercase tracking-wide truncate leading-tight group-hover:text-[#38bdf8] transition-colors">{name}</span>
+            <span className="text-[9px] text-gray-500 font-bold tracking-widest uppercase mt-0.5">{sku}</span>
           </div>
         </div>
       </TableCell>
       {isCamion && (
-        <TableCell className="text-center bg-[#091016]/20 font-bold text-emerald-500 text-sm border-r border-[#1e3848]/30">{entries || '-'}</TableCell>
+        <TableCell className="text-center bg-[#091016]/10 font-bold text-emerald-500 text-xs sm:text-sm border-r border-[#1e3848]/30 px-1">{entries || '-'}</TableCell>
       )}
       {isCamion ? (
         salesByDay.map((daySale, idx) => (
-          <TableCell key={idx} className="p-1 border-r border-[#1e3848]/30 text-center min-w-[70px]">
+          <TableCell key={idx} className="p-0 border-r border-[#1e3848]/30 text-center min-w-[50px] sm:min-w-[70px]">
             <input 
               type="number" 
-              className="h-10 w-full text-center border-none bg-transparent hover:bg-[#0e1a24] focus:bg-[#091016] text-white font-bold text-sm p-0 transition-colors outline-none"
+              className="h-10 w-full text-center border-none bg-transparent hover:bg-[#0e1a24] focus:bg-[#091016] text-white font-bold text-xs sm:text-sm p-0 transition-colors outline-none"
               defaultValue={daySale || ""}
               placeholder="-"
               onBlur={(e) => {
@@ -128,14 +128,14 @@ const ReconciliationRow = React.memo(({
           </TableCell>
         ))
       ) : null}
-      <TableCell className="text-center font-bold text-white bg-[#091016]/20 border-r border-[#1e3848]/30 text-sm">{finalStock}</TableCell>
-      <TableCell className="text-right font-bold border-r border-[#1e3848]/30 whitespace-nowrap text-[11px] text-gray-500 pr-4">L. {totalValue.toLocaleString('es-HN', { minimumFractionDigits: 2 })}</TableCell>
-      <TableCell className="text-right sticky right-0 bg-[#12222e] border-l border-[#1e3848]/50 z-10 p-4 min-w-[180px] pr-6">
-        <div className="flex items-center gap-2 justify-end">
-          <input type="number" className="h-9 w-14 text-center px-1 text-xs bg-[#091016] border border-[#1e3848] rounded focus:border-[#38bdf8] font-bold text-white outline-none" value={qtyInput} onChange={e => onUpdateInput(id, e.target.value)} />
-          <div className="flex flex-col gap-1">
-            <button className="h-5 px-2 text-[8px] border border-emerald-500/30 text-white font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 rounded" onClick={() => onRegisterMovement(id, name, 'Entry')}>+ CARGA</button>
-            <button className="h-5 px-2 text-[8px] border border-rose-500/30 text-white font-bold uppercase tracking-widest bg-rose-600 hover:bg-rose-500 rounded" onClick={() => onRegisterMovement(id, name, 'Exit')}>- VENTA</button>
+      <TableCell className="text-center font-bold text-white bg-[#091016]/10 border-r border-[#1e3848]/30 text-xs sm:text-sm">{finalStock}</TableCell>
+      <TableCell className="text-right font-bold border-r border-[#1e3848]/30 whitespace-nowrap text-[9px] sm:text-[11px] text-gray-500 pr-2 sm:pr-4 hidden xs:table-cell">L. {totalValue.toLocaleString('es-HN', { minimumFractionDigits: 0 })}</TableCell>
+      <TableCell className="text-right sticky right-0 bg-[#12222e] border-l border-[#1e3848]/50 z-10 p-2 sm:p-4 min-w-[140px] sm:min-w-[180px] pr-4 sm:pr-6">
+        <div className="flex items-center gap-1.5 sm:gap-2 justify-end">
+          <input type="number" className="h-8 w-10 sm:h-9 sm:w-14 text-center px-1 text-[10px] sm:text-xs bg-[#091016] border border-[#1e3848] rounded focus:border-[#38bdf8] font-bold text-white outline-none" value={qtyInput} onChange={e => onUpdateInput(id, e.target.value)} />
+          <div className="flex flex-col gap-0.5 sm:gap-1">
+            <button className="h-4 sm:h-5 px-1.5 sm:px-2 text-[7px] sm:text-[8px] border border-emerald-500/30 text-white font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 rounded" onClick={() => onRegisterMovement(id, name, 'Entry')}>+ CARGA</button>
+            <button className="h-4 sm:h-5 px-1.5 sm:px-2 text-[7px] sm:text-[8px] border border-rose-500/30 text-white font-bold uppercase tracking-widest bg-rose-600 hover:bg-rose-500 rounded" onClick={() => onRegisterMovement(id, name, 'Exit')}>- VENTA</button>
           </div>
         </div>
       </TableCell>
@@ -155,7 +155,6 @@ export default function ReconciliacionPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({})
-  const [showOnlyStocked, setShowOnlyStocked] = useState(true)
   const [sortBy, setSortBy] = useState<string>("name_asc")
   const [referenceDate, setReferenceDate] = useState(new Date())
   const [historyDialog, setHistoryDialog] = useState({ isOpen: false, productId: "", productName: "" })
@@ -199,9 +198,15 @@ export default function ReconciliacionPage() {
     const filtered = products.filter(p => {
       const text = `${p.name} ${p.sku} ${p.barcode || ""} ${p.category || ""}`.toLowerCase()
       const matchKeywords = keywords.every(kw => text.includes(kw))
-      if (!matchKeywords) return false
-      if (showOnlyStocked) return (invMap.get(p.id) || 0) > 0 || movementsByProduct.has(p.id)
-      return true
+      
+      // Professional filtering: 
+      // 1. If searching, show all matches regardless of stock
+      // 2. If NOT searching, show only items with stock or movement in the current period
+      if (keywords.length > 0) return matchKeywords;
+      
+      const hasStock = (invMap.get(p.id) || 0) > 0
+      const hasMovements = movementsByProduct.has(p.id)
+      return hasStock || hasMovements
     }).map(p => {
       const pMovs = movementsByProduct.get(p.id) || []
       let entries = 0, exits = 0; const sales = [0,0,0,0,0,0]
@@ -485,17 +490,6 @@ export default function ReconciliacionPage() {
                 <SelectItem value="value_desc" className="text-xs font-bold uppercase text-[#38bdf8]">Mayor Valoración</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-
-          <div 
-            className="flex items-center justify-between p-4 bg-[#091016] border border-[#1e3848] rounded-lg opacity-50 grayscale pointer-events-none hidden"
-          >
-            <span className="text-xs font-bold text-gray-400 uppercase">Filtrado Automático Activo</span>
-            <Switch 
-              checked={true} 
-              onCheckedChange={() => {}} 
-              className="data-[state=checked]:bg-[#00a896]" 
-            />
           </div>
         </div>
 
