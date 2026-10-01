@@ -56,6 +56,7 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
+  const [lastScanTime, setLastScanTime] = useState(0);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
 
@@ -95,6 +96,8 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
         if (backCamera && videoRef.current) {
           await reader.decodeFromVideoDevice(backCamera.deviceId, videoRef.current, (result, error) => {
             if (result) {
+              const now = Date.now();
+              setLastScanTime(now);
               onScanRef.current(result.getText());
             }
           });
@@ -159,7 +162,10 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
       />
       {/* Overlay decorations */}
       <div className="absolute inset-0 border-[2px] border-[#38bdf8]/30 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-1/3 border-2 border-[#38bdf8] rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none animate-pulse" />
+      <div className={cn(
+        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-1/3 border-2 rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none transition-all duration-300",
+        (Date.now() - lastScanTime < 500) ? "border-emerald-500 bg-emerald-500/20 scale-105" : "border-[#38bdf8] animate-pulse"
+      )} />
       
       {/* Scanning Line */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-4/5 h-[1px] bg-[#38bdf8] shadow-[0_0_10px_#38bdf8] animate-scan-line pointer-events-none" />
@@ -222,6 +228,7 @@ export default function ConteoPage() {
   const [lastScannedProduct, setLastScannedProduct] = useState<ScannedItem | null>(null)
   const [isApplying, setIsApplying] = useState(false)
   const [filtro, setFiltro] = useState<'todos' | 'faltantes' | 'discrepancias'>('todos')
+  const lastScannedRef = useRef<{ code: string, time: number } | null>(null)
 
   // Fetch inventory for selected warehouse
   const inventoryQuery = useMemoFirebase(() => 
@@ -241,6 +248,13 @@ export default function ConteoPage() {
   const handleScan = useCallback((code: string) => {
     if (!code) return;
     const cleanCode = code.trim();
+
+    // Security: Throttle duplicate scans of the same code within 1.5s
+    const now = Date.now();
+    if (lastScannedRef.current?.code === cleanCode && (now - lastScannedRef.current.time) < 1500) {
+      return;
+    }
+    lastScannedRef.current = { code: cleanCode, time: now };
     
     // Search by Correlativo (SKU) or Barcode
     const product = products?.find(p => p.sku === cleanCode || p.barcode === cleanCode);

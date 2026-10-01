@@ -60,6 +60,7 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
+  const [lastScanTime, setLastScanTime] = useState(0);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
 
@@ -99,6 +100,8 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
         if (backCamera && videoRef.current) {
           await reader.decodeFromVideoDevice(backCamera.deviceId, videoRef.current, (result) => {
             if (result) {
+              const now = Date.now();
+              setLastScanTime(now);
               onScanRef.current(result.getText());
             }
           });
@@ -160,7 +163,10 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
         className="w-full h-full object-cover"
       />
       <div className="absolute inset-0 border-[2px] border-[#38bdf8]/30 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-1/2 border-2 border-[#38bdf8] rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none animate-pulse" />
+      <div className={cn(
+        "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-1/2 border-2 rounded-lg shadow-[0_0_20px_rgba(56,189,248,0.5)] pointer-events-none transition-all duration-300",
+        (Date.now() - lastScanTime < 500) ? "border-emerald-500 bg-emerald-500/20 scale-105" : "border-[#38bdf8] animate-pulse"
+      )} />
       
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-[#38bdf8] shadow-[0_0_10px_#38bdf8] animate-scan-line pointer-events-none" />
 
@@ -250,6 +256,7 @@ export default function ProductosPage() {
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const [sortBy, setSortBy] = useState<string>("sku_asc")
   const [newProduct, setNewProduct] = useState({ nombre: "", sku: "", barcode: "", categoria: "", costPrice: "", descripcion: "" })
+  const lastScannedRef = useRef<{ code: string, time: number } | null>(null)
 
   const nextSkuSuggestion = useMemo(() => {
     if (!products || products.length === 0) return "001";
@@ -533,9 +540,15 @@ export default function ProductosPage() {
                   <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" /> Escaneo de Cámara Activo
                 </label>
                 <BarcodeScanner onScan={(code) => {
+                  const now = Date.now();
+                  if (lastScannedRef.current?.code === code && (now - lastScannedRef.current.time) < 1500) {
+                    return;
+                  }
+                  lastScannedRef.current = { code, time: now };
+                  
                   setNewProduct({...newProduct, barcode: code});
                   setShowScanner(false);
-                  toast({ title: "Código Capturado", description: code });
+                  toast({ title: "Código Capturado", description: code, type: "success" });
                 }} />
                 <p className="text-[9px] text-gray-500 font-medium italic text-center">Coloque el código de barras frente a la cámara</p>
               </div>
