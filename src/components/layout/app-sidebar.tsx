@@ -8,7 +8,8 @@ import {
   BarChart3,
   Settings,
   PackageSearch,
-  ScanBarcode
+  ScanBarcode,
+  Search
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 
@@ -29,6 +30,7 @@ import {
 
 const navigationItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/" },
+  { title: "Lector de Precios", icon: Search, url: "/consulta" },
   { title: "Productos", icon: Box, url: "/productos" },
   { title: "Bodegas", icon: Warehouse, url: "/bodegas" },
   { title: "Conteo Físico", icon: ScanBarcode, url: "/conteo" },

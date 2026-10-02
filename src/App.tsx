@@ -19,6 +19,7 @@ const Reconciliacion = React.lazy(() => import('./pages/Reconciliacion'));
 const Reportes = React.lazy(() => import('./pages/Reportes'));
 const Conteo = React.lazy(() => import('./pages/Conteo'));
 const Configuracion = React.lazy(() => import('./pages/Configuracion'));
+const Consulta = React.lazy(() => import('./pages/Consulta'));
 
 import { TooltipProvider } from '@/src/components/ui/tooltip';
 import { ThemeProvider, useTheme } from '@/src/components/theme-provider';
@@ -136,6 +137,7 @@ function AppLayout() {
                 <Route path="/reconciliacion" element={<Reconciliacion />} />
                 <Route path="/reportes" element={<Reportes />} />
                 <Route path="/conteo" element={<Conteo />} />
+                <Route path="/consulta" element={<Consulta />} />
                 <Route path="/configuracion" element={<Configuracion />} />
               </Routes>
 

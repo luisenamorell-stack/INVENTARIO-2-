@@ -6,16 +6,17 @@ import {
   ScanBarcode, 
   ArrowLeftRight,
   ClipboardCheck,
-  Settings
+  Settings,
+  Search
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/src/lib/utils"
 
 const navItems = [
   { title: "Inicio", icon: LayoutDashboard, url: "/" },
-  { title: "Productos", icon: Box, url: "/productos" },
+  { title: "Consultar", icon: Search, url: "/consulta" },
   { title: "Escanear", icon: ScanBarcode, url: "/conteo", primary: true },
-  { title: "Bodegas", icon: Warehouse, url: "/bodegas" },
+  { title: "Productos", icon: Box, url: "/productos" },
   { title: "Kardex", icon: ClipboardCheck, url: "/reconciliacion" },
 ]
 
