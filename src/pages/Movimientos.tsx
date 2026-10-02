@@ -41,7 +41,7 @@ import { ScrollArea } from "@/src/components/ui/scroll-area"
 
 import { PageShell } from "@/src/components/layout/page-shell"
 import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
-import { Zap, ZapOff, Camera, ScanBarcode } from "lucide-react"
+import { Zap, ZapOff, Camera, ScanBarcode, XCircle } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 
 const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
@@ -50,15 +50,56 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
   const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [successFlash, setSuccessFlash] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
 
   useEffect(() => {
     if (successFlash) {
-      const timer = setTimeout(() => setSuccessFlash(false), 400);
+      const timer = setTimeout(() => successFlash && setSuccessFlash(false), 400);
       return () => clearTimeout(timer);
     }
   }, [successFlash]);
+
+  const startScanner = useCallback(async () => {
+    setPermissionError(null);
+    try {
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { min: 1280, ideal: 1920 },
+          height: { min: 720, ideal: 1080 }
+        }
+      };
+
+      if (videoRef.current && readerRef.current) {
+        await readerRef.current.decodeFromConstraints(constraints, videoRef.current, (result) => {
+          if (result) {
+            setSuccessFlash(true);
+            onScanRef.current(result.getText());
+          }
+        });
+
+        setTimeout(() => {
+          const stream = videoRef.current?.srcObject as MediaStream;
+          const track = stream?.getVideoTracks()[0];
+          if (track) {
+            const capabilities = track.getCapabilities() as any;
+            if (capabilities.torch) {
+              setHasTorch(true);
+            }
+          }
+        }, 1000);
+      }
+    } catch (err: any) {
+      console.error("Scanner Error:", err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setPermissionError("Acceso denegado. Permita el uso de la cámara.");
+      } else {
+        setPermissionError("Error de cámara. Verifique que no esté en uso.");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const hints = new Map();
@@ -79,46 +120,12 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
     const reader = new BrowserMultiFormatReader(hints);
     readerRef.current = reader;
 
-    const startScanner = async () => {
-      try {
-        const constraints: MediaStreamConstraints = {
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { min: 1280, ideal: 1920 },
-            height: { min: 720, ideal: 1080 }
-          }
-        };
-
-        if (videoRef.current) {
-          await reader.decodeFromConstraints(constraints, videoRef.current, (result) => {
-            if (result) {
-              setSuccessFlash(true);
-              onScanRef.current(result.getText());
-            }
-          });
-
-          setTimeout(() => {
-            const stream = videoRef.current?.srcObject as MediaStream;
-            const track = stream?.getVideoTracks()[0];
-            if (track) {
-              const capabilities = track.getCapabilities() as any;
-              if (capabilities.torch) {
-                setHasTorch(true);
-              }
-            }
-          }, 1000);
-        }
-      } catch (err) {
-        console.error("Scanner Error:", err);
-      }
-    };
-
     startScanner();
 
     return () => {
       reader.reset();
     };
-  }, []);
+  }, [startScanner]);
 
   const toggleTorch = async () => {
     if (!videoRef.current || !hasTorch) return;
@@ -136,6 +143,21 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
       }
     }
   };
+
+  if (permissionError) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 bg-[#091016] border border-rose-500/30 rounded-xl text-center space-y-3 aspect-[16/9] md:aspect-[21/9]">
+        <XCircle className="h-10 w-10 text-rose-500" />
+        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">{permissionError}</p>
+        <button 
+          onClick={() => startScanner()}
+          className="px-4 py-1.5 bg-[#2a7b9b] text-white rounded-lg text-[9px] font-bold uppercase tracking-widest"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full aspect-[16/9] md:aspect-[21/9] bg-black rounded-xl overflow-hidden border border-[#1e3848] shadow-2xl">

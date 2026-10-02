@@ -61,6 +61,7 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
   const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [successFlash, setSuccessFlash] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
 
@@ -71,6 +72,48 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
       return () => clearTimeout(timer);
     }
   }, [successFlash]);
+
+  const startScanner = useCallback(async () => {
+    setPermissionError(null);
+    try {
+      // Use constraints directly for better compatibility
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { min: 1280, ideal: 1920 },
+          height: { min: 720, ideal: 1080 }
+        }
+      };
+
+      if (videoRef.current && readerRef.current) {
+        await readerRef.current.decodeFromConstraints(constraints, videoRef.current, (result, error) => {
+          if (result) {
+            setSuccessFlash(true);
+            onScanRef.current(result.getText());
+          }
+        });
+
+        // Torch check with delay to ensure stream is active
+        setTimeout(() => {
+          const stream = videoRef.current?.srcObject as MediaStream;
+          const track = stream?.getVideoTracks()[0];
+          if (track) {
+            const capabilities = track.getCapabilities() as any;
+            if (capabilities.torch) {
+              setHasTorch(true);
+            }
+          }
+        }, 1000);
+      }
+    } catch (err: any) {
+      console.error("Scanner Error:", err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setPermissionError("Permiso de cámara denegado. Por favor, habilite el acceso en la configuración de su navegador.");
+      } else {
+        setPermissionError("No se pudo acceder a la cámara. Verifique que no esté siendo usada por otra aplicación.");
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const hints = new Map();
@@ -91,48 +134,12 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
     const reader = new BrowserMultiFormatReader(hints);
     readerRef.current = reader;
 
-    const startScanner = async () => {
-      try {
-        // Use constraints directly for better compatibility
-        const constraints: MediaStreamConstraints = {
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { min: 1280, ideal: 1920 },
-            height: { min: 720, ideal: 1080 }
-          }
-        };
-
-        if (videoRef.current) {
-          await reader.decodeFromConstraints(constraints, videoRef.current, (result, error) => {
-            if (result) {
-              setSuccessFlash(true);
-              onScanRef.current(result.getText());
-            }
-          });
-
-          // Torch check with delay to ensure stream is active
-          setTimeout(() => {
-            const stream = videoRef.current?.srcObject as MediaStream;
-            const track = stream?.getVideoTracks()[0];
-            if (track) {
-              const capabilities = track.getCapabilities() as any;
-              if (capabilities.torch) {
-                setHasTorch(true);
-              }
-            }
-          }, 1000);
-        }
-      } catch (err) {
-        console.error("Scanner Error:", err);
-      }
-    };
-
     startScanner();
 
     return () => {
       reader.reset();
     };
-  }, []);
+  }, [startScanner]);
 
   const toggleTorch = async () => {
     if (!videoRef.current || !hasTorch) return;
@@ -150,6 +157,24 @@ const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
       }
     }
   };
+
+  if (permissionError) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-[#091016] border-2 border-rose-500/30 rounded-2xl text-center space-y-4">
+        <AlertCircle className="h-12 w-12 text-rose-500" />
+        <div className="space-y-2">
+          <h4 className="text-sm font-bold text-white uppercase tracking-widest">Error de Acceso</h4>
+          <p className="text-xs text-gray-500 max-w-[250px] mx-auto leading-relaxed">{permissionError}</p>
+        </div>
+        <button 
+          onClick={() => startScanner()}
+          className="flex items-center gap-2 px-6 py-2 bg-[#2a7b9b] hover:bg-[#236883] text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg"
+        >
+          <RotateCcw className="h-3.5 w-3.5" /> Reintentar Permiso
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full aspect-[4/3] bg-black rounded-xl overflow-hidden border border-[#1e3848] shadow-2xl group">
