@@ -38,7 +38,7 @@ import {
 import { Label } from "@/src/components/ui/label"
 import { Badge } from "@/src/components/ui/badge"
 import { useToast } from "@/src/hooks/use-toast"
-import { useFirestore, useCollection, useMemoFirebase } from "@/src/firebase"
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/src/firebase"
 import { 
   collection, 
   serverTimestamp, 
@@ -131,13 +131,19 @@ const ReconciliationRow = React.memo(({
       ) : null}
       <TableCell className="text-right font-bold border-r border-[#1e3848]/30 whitespace-nowrap text-[9px] sm:text-[11px] text-gray-500 pr-2 sm:pr-4 hidden lg:table-cell">L. {totalValue.toLocaleString('es-HN', { minimumFractionDigits: 0 })}</TableCell>
       <TableCell className="text-right sticky right-0 bg-[#12222e] border-l border-[#1e3848]/50 z-10 p-2 sm:p-4 min-w-[120px] sm:min-w-[180px] pr-3 sm:pr-6">
-        <div className="flex items-center gap-1.5 sm:gap-2 justify-end">
-          <input type="number" className="h-8 w-10 sm:h-9 sm:w-14 text-center px-1 text-[10px] sm:text-xs bg-[#091016] border border-[#1e3848] rounded focus:border-[#38bdf8] font-bold text-white outline-none" value={qtyInput} onChange={e => onUpdateInput(id, e.target.value)} />
-          <div className="flex flex-col gap-0.5 sm:gap-1">
-            <button className="h-4 sm:h-5 px-1.5 sm:px-2 text-[7px] sm:text-[8px] border border-emerald-500/30 text-white font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 rounded" onClick={() => onRegisterMovement(id, name, 'Entry')}>+ CARGA</button>
-            <button className="h-4 sm:h-5 px-1.5 sm:px-2 text-[7px] sm:text-[8px] border border-rose-500/30 text-white font-bold uppercase tracking-widest bg-rose-600 hover:bg-rose-500 rounded" onClick={() => onRegisterMovement(id, name, 'Exit')}>- VENTA</button>
+        {onRegisterMovement && onUpdateInput ? (
+          <div className="flex items-center gap-1.5 sm:gap-2 justify-end">
+            <input type="number" className="h-8 w-10 sm:h-9 sm:w-14 text-center px-1 text-[10px] sm:text-xs bg-[#091016] border border-[#1e3848] rounded focus:border-[#38bdf8] font-bold text-white outline-none" value={qtyInput} onChange={e => onUpdateInput(id, e.target.value)} />
+            <div className="flex flex-col gap-0.5 sm:gap-1">
+              <button className="h-4 sm:h-5 px-1.5 sm:px-2 text-[7px] sm:text-[8px] border border-emerald-500/30 text-white font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 rounded" onClick={() => onRegisterMovement(id, name, 'Entry')}>+ CARGA</button>
+              <button className="h-4 sm:h-5 px-1.5 sm:px-2 text-[7px] sm:text-[8px] border border-rose-500/30 text-white font-bold uppercase tracking-widest bg-rose-600 hover:bg-rose-500 rounded" onClick={() => onRegisterMovement(id, name, 'Exit')}>- VENTA</button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-end">
+             <Badge variant="outline" className="text-[7px] border-gray-800 text-gray-600 font-bold uppercase">Solo Lectura</Badge>
+          </div>
+        )}
       </TableCell>
     </TableRow>
   )
@@ -149,6 +155,7 @@ import { PageShell } from "@/src/components/layout/page-shell"
 export default function ReconciliacionPage() {
   const firestore = useFirestore()
   const { toast } = useToast()
+  const { isAdmin: isSystemAdmin } = useUser()
   const [searchParams] = useSearchParams()
   
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>(searchParams.get("bodega") || "")
@@ -416,9 +423,9 @@ export default function ReconciliacionPage() {
                     {...item} 
                     qtyInput={qtyInputs[item.id] || ""} 
                     isCamion={isCamion} 
-                    onUpdateInput={(id,v) => setQtyInputs(p=>({...p,[id]:v}))} 
-                    onRegisterMovement={handleRegisterMovement} 
-                    onUpdateDailySale={handleUpdateDailySale} 
+                    onUpdateInput={isSystemAdmin ? (id,v) => setQtyInputs(p=>({...p,[id]:v})) : undefined} 
+                    onRegisterMovement={isSystemAdmin ? handleRegisterMovement : undefined} 
+                    onUpdateDailySale={isSystemAdmin ? handleUpdateDailySale : undefined} 
                     onOpenHistory={(pid,pn) => setHistoryDialog({isOpen:true, productId:pid, productName:pn})} 
                     onDeleteProductData={handleDeleteProductData} 
                   />
@@ -458,25 +465,33 @@ export default function ReconciliacionPage() {
                   </div>
 
                   <div className="flex items-center gap-2 pt-2">
-                    <input 
-                      type="number" 
-                      className="h-10 flex-1 bg-[#091016] border border-[#1e3848] rounded-lg text-center text-white font-bold text-sm outline-none focus:border-[#38bdf8]" 
-                      placeholder="CANT."
-                      value={qtyInputs[item.id] || ""}
-                      onChange={e => setQtyInputs(prev => ({ ...prev, [item.id]: e.target.value }))}
-                    />
-                    <button 
-                      onClick={() => handleRegisterMovement(item.id, item.name, 'Entry')}
-                      className="h-10 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-600/10"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> CARGA
-                    </button>
-                    <button 
-                      onClick={() => handleRegisterMovement(item.id, item.name, 'Exit')}
-                      className="h-10 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg flex items-center gap-2 shadow-lg shadow-rose-600/10"
-                    >
-                      <Minus className="h-3.5 w-3.5" /> VENTA
-                    </button>
+                    {isSystemAdmin ? (
+                      <>
+                        <input 
+                          type="number" 
+                          className="h-10 flex-1 bg-[#091016] border border-[#1e3848] rounded-lg text-center text-white font-bold text-sm outline-none focus:border-[#38bdf8]" 
+                          placeholder="CANT."
+                          value={qtyInputs[item.id] || ""}
+                          onChange={e => setQtyInputs(prev => ({ ...prev, [item.id]: e.target.value }))}
+                        />
+                        <button 
+                          onClick={() => handleRegisterMovement(item.id, item.name, 'Entry')}
+                          className="h-10 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg flex items-center gap-2 shadow-lg shadow-emerald-600/10"
+                        >
+                          <Plus className="h-3.5 w-3.5" /> CARGA
+                        </button>
+                        <button 
+                          onClick={() => handleRegisterMovement(item.id, item.name, 'Exit')}
+                          className="h-10 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg flex items-center gap-2 shadow-lg shadow-rose-600/10"
+                        >
+                          <Minus className="h-3.5 w-3.5" /> VENTA
+                        </button>
+                      </>
+                    ) : (
+                      <div className="flex-1 py-2 text-center bg-[#091016] rounded-lg border border-[#1e3848]">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Modo Consulta</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -505,13 +520,15 @@ export default function ReconciliacionPage() {
                 ))}
               </SelectContent>
             </Select>
-            <button 
-              onClick={handleResetInventory}
-              className="w-12 h-12 rounded-lg border border-rose-500/30 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shrink-0 shadow-md"
-              title="Reiniciar Unidad"
-            >
-              <Trash2 className="h-5 w-5" />
-            </button>
+            {isSystemAdmin && (
+              <button 
+                onClick={handleResetInventory}
+                className="w-12 h-12 rounded-lg border border-rose-500/30 text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shrink-0 shadow-md"
+                title="Reiniciar Unidad"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            )}
           </div>
           
           <div className="mt-6 p-4 bg-[#091016] border border-[#1e3848] rounded-lg">

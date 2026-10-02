@@ -20,9 +20,11 @@ const Reportes = React.lazy(() => import('./pages/Reportes'));
 const Conteo = React.lazy(() => import('./pages/Conteo'));
 const Configuracion = React.lazy(() => import('./pages/Configuracion'));
 const Consulta = React.lazy(() => import('./pages/Consulta'));
+const Login = React.lazy(() => import('./pages/Login'));
 
 import { TooltipProvider } from '@/src/components/ui/tooltip';
 import { ThemeProvider, useTheme } from '@/src/components/theme-provider';
+import { useUser } from '@/src/firebase';
 
 export default function App() {
   return (
@@ -30,13 +32,38 @@ export default function App() {
       <TooltipProvider>
         <SidebarProvider defaultOpen={true}>
           <Router>
-            <AppLayout />
+            <AuthGuard>
+              <AppLayout />
+            </AuthGuard>
             <Toaster />
           </Router>
         </SidebarProvider>
       </TooltipProvider>
     </ThemeProvider>
   );
+}
+
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { user, isUserLoading } = useUser();
+
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen bg-[#0b1319] flex flex-col items-center justify-center gap-4 text-gray-500">
+        <Loader2 className="h-12 w-12 animate-spin text-[#00a896]" />
+        <p className="text-[11px] font-bold uppercase tracking-[0.4em]">Verificando Credenciales...</p>
+      </div>
+    );
+  }
+
+  if (!user || user.isAnonymous) {
+    return (
+      <React.Suspense fallback={null}>
+        <Login />
+      </React.Suspense>
+    );
+  }
+
+  return <>{children}</>;
 }
 
 function AppLayout() {

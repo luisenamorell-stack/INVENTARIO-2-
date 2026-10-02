@@ -54,7 +54,7 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/src/firebase"
 import { collection, doc, serverTimestamp, collectionGroup } from "firebase/firestore"
 import { setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/src/firebase/non-blocking-updates"
 import { BrowserMultiFormatReader, DecodeHintType, BarcodeFormat } from '@zxing/library';
-import { Zap, ZapOff, Wand2, XCircle } from "lucide-react"
+import { Zap, ZapOff, Wand2, XCircle, Image as ImageIcon, Link as LinkIcon } from "lucide-react"
 
 const BarcodeScanner = ({ onScan }: { onScan: (code: string) => void }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -227,9 +227,18 @@ const ProductRow = React.memo(({ prod, stock, onEdit, onDelete }: { prod: any, s
   return (
     <TableRow className="hover:bg-[#1e3240]/30 border-[#1e3848]/50 h-16 group transition-colors">
       <TableCell className="font-mono text-[10px] sm:text-[11px] text-[#38bdf8] font-bold pl-4 sm:pl-6">
-        <div className="flex flex-col">
-          <span>{prod.sku}</span>
-          {prod.barcode && <span className="text-[7px] sm:text-[8px] text-gray-500 font-normal hidden xs:block">BAR: {prod.barcode}</span>}
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded bg-[#091016] border border-[#1e3848] overflow-hidden flex items-center justify-center shrink-0">
+            {prod.imageUrl ? (
+              <img src={prod.imageUrl} alt={prod.name} className="h-full w-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+            ) : (
+              <ImageIcon className="h-4 w-4 text-gray-700" />
+            )}
+          </div>
+          <div className="flex flex-col">
+            <span>{prod.sku}</span>
+            {prod.barcode && <span className="text-[7px] sm:text-[8px] text-gray-500 font-normal hidden xs:block">BAR: {prod.barcode}</span>}
+          </div>
         </div>
       </TableCell>
       <TableCell className="min-w-[120px] sm:min-w-0">
@@ -276,7 +285,7 @@ export default function ProductosPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const [sortBy, setSortBy] = useState<string>("sku_asc")
-  const [newProduct, setNewProduct] = useState({ nombre: "", sku: "", barcode: "", categoria: "", costPrice: "", descripcion: "" })
+  const [newProduct, setNewProduct] = useState({ nombre: "", sku: "", barcode: "", categoria: "", costPrice: "", descripcion: "", imageUrl: "" })
   const lastScannedRef = useRef<{ code: string, time: number } | null>(null)
 
   const nextSkuSuggestion = useMemo(() => {
@@ -333,7 +342,7 @@ export default function ProductosPage() {
     setIsAdding(false); 
     setEditingProductId(null); 
     setShowScanner(false);
-    setNewProduct({nombre:"", sku:"", barcode: "", categoria:"", costPrice:"", descripcion:""}); 
+    setNewProduct({nombre:"", sku:"", barcode: "", categoria:"", costPrice:"", descripcion:"", imageUrl: ""}); 
     setIsSaving(false); 
   }, []);
 
@@ -353,6 +362,7 @@ export default function ProductosPage() {
       sku: newProduct.sku, 
       barcode: finalBarcode,
       category: newProduct.categoria, 
+      imageUrl: newProduct.imageUrl,
       costPrice: Number(newProduct.costPrice)||0, 
       description: newProduct.descripcion, 
       updatedAt: serverTimestamp() 
@@ -433,7 +443,8 @@ export default function ProductosPage() {
                         barcode: p.barcode || "",
                         categoria:p.category, 
                         costPrice:p.costPrice?.toString() || "0", 
-                        descripcion:p.description || ""
+                        descripcion:p.description || "",
+                        imageUrl: p.imageUrl || ""
                       }); 
                       setEditingProductId(p.id); 
                       setIsAdding(true);
@@ -595,14 +606,40 @@ export default function ProductosPage() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#00a896]">Nombre Comercial</label>
-              <input 
-                className="w-full bg-[#091016] border border-[#1e3848] rounded-lg px-4 py-3 text-sm text-white focus:border-[#00a896] outline-none font-bold uppercase"
-                value={newProduct.nombre} 
-                onChange={e => setNewProduct({...newProduct, nombre: e.target.value})} 
-              />
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#00a896]">Nombre Comercial</label>
+                <input 
+                  className="w-full bg-[#091016] border border-[#1e3848] rounded-lg px-4 py-3 text-sm text-white focus:border-[#00a896] outline-none font-bold uppercase"
+                  value={newProduct.nombre} 
+                  onChange={e => setNewProduct({...newProduct, nombre: e.target.value})} 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#00a896]">URL de Imagen</label>
+                <div className="relative">
+                  <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                  <input 
+                    className="w-full bg-[#091016] border border-[#1e3848] rounded-lg pl-10 pr-4 py-3 text-sm text-white focus:border-[#00a896] outline-none font-medium"
+                    value={newProduct.imageUrl} 
+                    onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})} 
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
             </div>
+            {newProduct.imageUrl && (
+              <div className="flex justify-center p-4 bg-[#091016] border border-[#1e3848] rounded-xl">
+                <div className="relative h-32 w-32 rounded-lg border border-[#38bdf8]/30 overflow-hidden bg-[#12222e] flex items-center justify-center">
+                  <img 
+                    src={newProduct.imageUrl} 
+                    alt="Preview" 
+                    className="h-full w-full object-cover" 
+                    onError={(e) => (e.currentTarget.parentElement!.innerHTML = '<div class="text-[10px] text-rose-500 font-bold uppercase text-center p-2">Error de Carga</div>')}
+                  />
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#00a896]">Descripción Detallada</label>
               <textarea 

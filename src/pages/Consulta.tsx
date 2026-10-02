@@ -233,28 +233,37 @@ export default function ConsultaPage() {
             {/* Main Info Card */}
             <div className="bg-[#12222e] border border-[#38bdf8]/30 rounded-3xl overflow-hidden shadow-2xl shadow-[#38bdf8]/5">
               <div className="bg-gradient-to-r from-[#12222e] to-[#0e1a24] p-8 border-b border-[#1e3848]">
-                <div className="flex justify-between items-start mb-6">
-                  <Badge className="bg-[#38bdf8]/10 text-[#38bdf8] border-[#38bdf8]/20 px-3 py-1 font-black text-[10px] tracking-[0.2em] uppercase">
-                    Ficha Técnica
-                  </Badge>
-                  <button 
-                    onClick={() => { setSelectedProduct(null); setShowScanner(true); }}
-                    className="flex items-center gap-2 text-gray-500 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-colors"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" /> Nueva Consulta
-                  </button>
-                </div>
-                <h2 className="text-3xl font-black text-white uppercase tracking-tight leading-none mb-2">{selectedProduct.name}</h2>
-                <div className="flex items-center gap-4">
-                   <div className="flex items-center gap-1.5">
-                     <Tag className="h-3.5 w-3.5 text-[#00a896]" />
-                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{selectedProduct.category}</span>
-                   </div>
-                   <div className="h-1 w-1 rounded-full bg-gray-700" />
-                   <div className="flex items-center gap-1.5">
-                     <ScanBarcode className="h-3.5 w-3.5 text-[#38bdf8]" />
-                     <span className="text-xs font-mono font-bold text-white uppercase">{selectedProduct.sku}</span>
-                   </div>
+                <div className="flex flex-col md:flex-row gap-8 items-start mb-6">
+                  {selectedProduct.imageUrl && (
+                    <div className="w-32 h-32 rounded-2xl border-2 border-[#38bdf8]/20 overflow-hidden shrink-0 bg-[#091016]">
+                      <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-4">
+                      <Badge className="bg-[#38bdf8]/10 text-[#38bdf8] border-[#38bdf8]/20 px-3 py-1 font-black text-[10px] tracking-[0.2em] uppercase">
+                        Ficha Técnica
+                      </Badge>
+                      <button 
+                        onClick={() => { setSelectedProduct(null); setShowScanner(true); }}
+                        className="flex items-center gap-2 text-gray-500 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-colors"
+                      >
+                        <ArrowLeft className="h-3.5 w-3.5" /> Nueva Consulta
+                      </button>
+                    </div>
+                    <h2 className="text-3xl font-black text-white uppercase tracking-tight leading-none mb-2">{selectedProduct.name}</h2>
+                    <div className="flex items-center gap-4">
+                       <div className="flex items-center gap-1.5">
+                         <Tag className="h-3.5 w-3.5 text-[#00a896]" />
+                         <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{selectedProduct.category}</span>
+                       </div>
+                       <div className="h-1 w-1 rounded-full bg-gray-700" />
+                       <div className="flex items-center gap-1.5">
+                         <ScanBarcode className="h-3.5 w-3.5 text-[#38bdf8]" />
+                         <span className="text-xs font-mono font-bold text-white uppercase">{selectedProduct.sku}</span>
+                       </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 

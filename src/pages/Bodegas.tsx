@@ -34,7 +34,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select"
 import { useToast } from "@/src/hooks/use-toast"
-import { useFirestore, useCollection, useMemoFirebase } from "@/src/firebase"
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/src/firebase"
 import { collection, doc, serverTimestamp } from "firebase/firestore"
 import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/src/firebase/non-blocking-updates"
 import { Link } from "react-router-dom"
@@ -44,6 +44,7 @@ import { PageShell } from "@/src/components/layout/page-shell"
 export default function BodegasPage() {
   const firestore = useFirestore()
   const { toast } = useToast()
+  const { isAdmin: isSystemAdmin } = useUser()
   
   const warehousesQuery = useMemoFirebase(() => {
     if (!firestore) return null
@@ -126,7 +127,7 @@ export default function BodegasPage() {
     setFormData({ name: "", type: "Camion", location: "", capacity: 500, description: "" })
   }
 
-  const actions = (
+  const actions = isSystemAdmin && (
     <button 
       onClick={() => setIsOpen(true)}
       className="bg-[#2a7b9b] hover:bg-[#236883] text-white h-11 px-6 font-bold shadow-lg shadow-[#2a7b9b]/10 uppercase tracking-widest text-[11px] rounded-lg transition-all flex items-center gap-2"
@@ -189,18 +190,26 @@ export default function BodegasPage() {
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 sm:pt-6 border-t border-[#1e3848]">
                   <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleEdit(wh)}
-                      className="flex-1 sm:flex-none p-2.5 rounded-lg border border-[#1e3848] text-gray-500 hover:text-[#38bdf8] hover:bg-[#1e3240] transition-all flex justify-center items-center"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(wh)}
-                      className="flex-1 sm:flex-none p-2.5 rounded-lg border border-[#1e3848] text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 transition-all flex justify-center items-center"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {isSystemAdmin ? (
+                      <>
+                        <button 
+                          onClick={() => handleEdit(wh)}
+                          className="flex-1 sm:flex-none p-2.5 rounded-lg border border-[#1e3848] text-gray-500 hover:text-[#38bdf8] hover:bg-[#1e3240] transition-all flex justify-center items-center"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(wh)}
+                          className="flex-1 sm:flex-none p-2.5 rounded-lg border border-[#1e3848] text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 transition-all flex justify-center items-center"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <div className="flex-1 flex items-center px-3">
+                         <Badge variant="outline" className="text-[7px] border-gray-800 text-gray-600 font-bold uppercase">Solo Lectura</Badge>
+                      </div>
+                    )}
                   </div>
                   <Link 
                     to={`/reconciliacion?bodega=${wh.id}`}

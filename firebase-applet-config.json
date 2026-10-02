@@ -1,12 +1,12 @@
 {
-  "projectId": "control-inventario-cmr",
-  "appId": "1:552659640435:web:53e780ec3d907215960a06",
-  "apiKey": "AIzaSyBsCqEj2ucurc6H6_Y39L3NVDbYT7bb_7k",
-  "authDomain": "control-inventario-cmr.firebaseapp.com",
+  "projectId": "studio-1770895208-398ba",
+  "appId": "1:278974480780:web:7043b1bb1f67f9b6ee16a9",
+  "apiKey": "AIzaSyAS_c0Nrx5tzkfbwP-rjGJJJ7h5Ry0f5Ok",
+  "authDomain": "studio-1770895208-398ba.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-stockflowpro-de87f8ab-192d-4ad3-b763-871eba637d9d",
-  "storageBucket": "control-inventario-cmr.firebasestorage.app",
-  "messagingSenderId": "552659640435",
+  "storageBucket": "studio-1770895208-398ba.firebasestorage.app",
+  "messagingSenderId": "278974480780",
   "measurementId": "",
-  "oAuthClientId": "552659640435-8evnspf0dcgqaogq8r8uokgs2aabr9cj.apps.googleusercontent.com",
+  "oAuthClientId": "278974480780-v6oc47u8ctmopunkn95fgq4v3ojbo2eh.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

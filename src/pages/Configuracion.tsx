@@ -14,18 +14,66 @@ import {
 import { Button } from "@/src/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/src/components/ui/card"
 import { Badge } from "@/src/components/ui/badge"
-import { useFirebase, useUser } from "@/src/firebase"
+import { useFirebase, useUser, useFirestore } from "@/src/firebase"
 import firebaseConfig from "@/firebase-applet-config.json"
 import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert"
+import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore"
 
 import { PageShell } from "@/src/components/layout/page-shell"
 
 export default function ConfiguracionPage() {
   const firebase = useFirebase()
+  const firestore = useFirestore()
   const { user, isUserLoading } = useUser()
+  const [isSeeding, setIsSeeding] = React.useState(false)
 
   const isFirestoreConnected = !!firebase?.firestore
   const isAuthActive = !!user
+  const isAdmin = user?.email?.toLowerCase() === 'luisenamorell@gmail.com'
+
+  const seedData = async () => {
+    if (!firestore || isSeeding) return
+    setIsSeeding(true)
+    try {
+      // Create a test connection doc
+      await setDoc(doc(firestore, "test", "connection"), { active: true, timestamp: serverTimestamp() })
+      
+      // Create initial warehouse
+      const whId = "W001"
+      await setDoc(doc(firestore, "warehouses", whId), {
+        id: whId,
+        name: "Bodega Principal",
+        type: "Bodega",
+        location: "Centro",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      })
+
+      // Create some products
+      const demoProducts = [
+        { sku: "001", name: "Cama King Size", category: "Camas", costPrice: 5500 },
+        { sku: "002", name: "Estante Metálico", category: "Muebles", costPrice: 1200 },
+        { sku: "003", name: "Silla Ergonómica", category: "Oficina", costPrice: 2500 }
+      ]
+
+      for (const p of demoProducts) {
+        const pid = doc(collection(firestore, "products")).id
+        await setDoc(doc(firestore, "products", pid), {
+          ...p,
+          id: pid,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        })
+      }
+
+      alert("Datos iniciales cargados con éxito. Recarga la página.")
+    } catch (e) {
+      console.error(e)
+      alert("Error al cargar datos: " + (e as any).message)
+    } finally {
+      setIsSeeding(false)
+    }
+  }
 
   return (
     <PageShell
@@ -109,6 +157,20 @@ export default function ConfiguracionPage() {
             >
               <RefreshCw className="h-4 w-4" /> Forzar Re-sincronización
             </button>
+
+            {isAdmin && (
+              <div className="pt-4 border-t border-[#1e3848]">
+                <button 
+                  onClick={seedData}
+                  disabled={isSeeding}
+                  className="w-full h-12 bg-[#00a896]/10 border border-[#00a896]/30 hover:bg-[#00a896]/20 text-[#00a896] font-bold uppercase tracking-widest text-[10px] rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                >
+                  {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <HardDrive className="h-4 w-4" />}
+                  Cargar Datos de Prueba (Seed)
+                </button>
+                <p className="text-[8px] text-gray-600 font-bold uppercase text-center mt-2">Visible solo para administradores</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -18,7 +18,8 @@ import {
   Package,
   FileText,
   Download,
-  ClipboardList
+  ClipboardList,
+  Image as ImageIcon
 } from "lucide-react"
 import { PageShell } from "@/src/components/layout/page-shell"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select"
@@ -218,6 +219,7 @@ interface ScannedItem {
   productId: string;
   sku: string;
   name: string;
+  imageUrl?: string;
   systemStock: number;
   countedStock: number;
   lastScanned: number;
@@ -301,6 +303,7 @@ export default function ConteoPage() {
           productId: product.id,
           sku: product.sku,
           name: product.name,
+          imageUrl: product.imageUrl,
           systemStock: warehouseInventory[product.id] || 0,
           countedStock: 0,
           lastScanned: Date.now(),
@@ -359,6 +362,7 @@ export default function ConteoPage() {
           productId: p.id,
           sku: p.sku,
           name: p.name,
+          imageUrl: p.imageUrl,
           systemStock: systemQty,
           countedStock: 0,
           lastScanned: 0,
@@ -648,17 +652,24 @@ export default function ConteoPage() {
                   <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform">
                     <Box className="h-24 w-24" />
                   </div>
-                  <div className="flex flex-col gap-1 relative z-10">
-                    <span className="text-[10px] font-bold text-[#00a896] uppercase tracking-[0.3em]">Último Detectado</span>
-                    <h4 className="text-xl font-bold text-white uppercase tracking-tight truncate">{lastScannedProduct.name}</h4>
-                    <div className="flex items-center gap-4 mt-2">
-                      <div className="bg-[#091016] px-4 py-2 rounded-lg border border-[#1e3848]">
-                        <span className="text-[10px] font-bold text-gray-500 block uppercase">SKU</span>
-                        <span className="text-sm font-mono text-[#38bdf8] font-bold">{lastScannedProduct.sku}</span>
+                  <div className="flex gap-4 relative z-10">
+                    {lastScannedProduct.imageUrl && (
+                      <div className="h-16 w-16 rounded-xl border border-[#00a896]/30 overflow-hidden shrink-0 bg-[#091016]">
+                        <img src={lastScannedProduct.imageUrl} className="h-full w-full object-cover" />
                       </div>
-                      <div className="bg-[#091016] px-4 py-2 rounded-lg border border-[#1e3848]">
-                        <span className="text-[10px] font-bold text-gray-500 block uppercase">Total Contado</span>
-                        <span className="text-sm text-white font-black">{lastScannedProduct.countedStock} <span className="text-[10px] text-gray-500 font-bold uppercase">UNID</span></span>
+                    )}
+                    <div className="flex flex-col gap-1 flex-1">
+                      <span className="text-[10px] font-bold text-[#00a896] uppercase tracking-[0.3em]">Último Detectado</span>
+                      <h4 className="text-xl font-bold text-white uppercase tracking-tight truncate">{lastScannedProduct.name}</h4>
+                      <div className="flex items-center gap-4 mt-2">
+                        <div className="bg-[#091016] px-4 py-2 rounded-lg border border-[#1e3848]">
+                          <span className="text-[10px] font-bold text-gray-500 block uppercase">SKU</span>
+                          <span className="text-sm font-mono text-[#38bdf8] font-bold">{lastScannedProduct.sku}</span>
+                        </div>
+                        <div className="bg-[#091016] px-4 py-2 rounded-lg border border-[#1e3848]">
+                          <span className="text-[10px] font-bold text-gray-500 block uppercase">Total Contado</span>
+                          <span className="text-sm text-white font-black">{lastScannedProduct.countedStock} <span className="text-[10px] text-gray-500 font-bold uppercase">UNID</span></span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -751,9 +762,18 @@ export default function ConteoPage() {
                     {itemsFiltrados.map((item) => (
                       <TableRow key={item.productId} className={`hover:bg-[#1e3240]/20 border-none transition-colors ${item.lastScanned === lastScannedProduct?.lastScanned ? 'bg-[#00a896]/5' : ''}`}>
                         <TableCell className="pl-4 sm:pl-6 py-3 sm:py-4">
-                          <div className="flex flex-col">
-                            <span className="text-[11px] sm:text-xs font-bold text-white uppercase truncate max-w-[100px] sm:max-w-[180px] block">{item.name}</span>
-                            <span className="text-[9px] font-mono text-[#38bdf8] font-medium">{item.sku}</span>
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded bg-[#091016] border border-[#1e3848] overflow-hidden flex items-center justify-center shrink-0">
+                              {item.imageUrl ? (
+                                <img src={item.imageUrl} className="h-full w-full object-cover" />
+                              ) : (
+                                <ImageIcon className="h-3 w-3 text-gray-700" />
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[11px] sm:text-xs font-bold text-white uppercase truncate max-w-[100px] sm:max-w-[150px] block">{item.name}</span>
+                              <span className="text-[9px] font-mono text-[#38bdf8] font-medium">{item.sku}</span>
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-center font-bold text-gray-400 text-[10px] sm:text-xs">{item.systemStock}</TableCell>
@@ -798,16 +818,25 @@ export default function ConteoPage() {
                 <div className="sm:hidden divide-y divide-[#1e3848]/30">
                   {itemsFiltrados.map((item) => (
                     <div key={item.productId} className={`p-4 space-y-3 transition-colors ${item.lastScanned === lastScannedProduct?.lastScanned ? 'bg-[#00a896]/10' : 'bg-transparent'}`}>
-                      <div className="flex justify-between items-start">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold text-white uppercase tracking-tight leading-tight">{item.name}</span>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">CÓD:</span>
-                            <span className="text-xs font-black text-[#38bdf8] tracking-widest uppercase">{item.sku}</span>
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-10 w-10 rounded-lg bg-[#091016] border border-[#1e3848] overflow-hidden flex items-center justify-center shrink-0">
+                            {item.imageUrl ? (
+                              <img src={item.imageUrl} className="h-full w-full object-cover" />
+                            ) : (
+                              <ImageIcon className="h-4 w-4 text-gray-700" />
+                            )}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-bold text-white uppercase tracking-tight leading-tight truncate">{item.name}</span>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">CÓD:</span>
+                              <span className="text-xs font-black text-[#38bdf8] tracking-widest uppercase">{item.sku}</span>
+                            </div>
                           </div>
                         </div>
                         <Badge className={cn(
-                          "text-[8px] uppercase tracking-widest font-black py-0.5 px-2",
+                          "text-[8px] uppercase tracking-widest font-black py-0.5 px-2 shrink-0",
                           item.estado === 'cuadrado' ? "bg-emerald-500/10 text-emerald-500" :
                           item.estado === 'faltante' ? "bg-rose-500/10 text-rose-500" : "bg-[#38bdf8]/10 text-[#38bdf8]"
                         )}>

@@ -27,6 +27,8 @@ import {
   SidebarRail,
   useSidebar
 } from "@/src/components/ui/sidebar"
+import { useUser } from "@/src/firebase"
+import { LogOut } from "lucide-react"
 
 const navigationItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/" },
@@ -42,7 +44,15 @@ const navigationItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
+  const { user, logout } = useUser();
   const isCollapsed = state === "collapsed";
+
+  const userInitials = user?.displayName
+    ?.split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "??";
 
   return (
     <Sidebar collapsible="icon" className="bg-[#0e1a24] text-gray-200 overflow-hidden">
@@ -145,12 +155,19 @@ export function AppSidebar() {
           {!isCollapsed && (
             <div className="mt-4 px-3 py-3 bg-[#12222e]/50 rounded-xl border border-[#1e3848] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="h-7 w-7 rounded-full bg-[#00a896] flex items-center justify-center text-[9px] font-black text-white shrink-0">
-                LM
+                {userInitials}
               </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] font-bold text-white truncate">Luis Namorell</span>
-                <span className="text-[7px] font-medium text-gray-500 uppercase tracking-widest truncate">Admin</span>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-[10px] font-bold text-white truncate">{user?.displayName || "Usuario"}</span>
+                <span className="text-[7px] font-medium text-gray-500 uppercase tracking-widest truncate">{user?.email === 'Luisenamorell@gmail.com' ? 'Admin' : 'Operador'}</span>
               </div>
+              <button 
+                onClick={logout}
+                className="p-1.5 text-gray-500 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-500/10"
+                title="Cerrar Sesión"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
         </SidebarMenu>

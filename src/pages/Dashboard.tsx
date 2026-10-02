@@ -49,14 +49,21 @@ export default function Dashboard() {
   const warehousesQuery = useMemoFirebase(() => firestore ? collection(firestore, "warehouses") : null, [firestore])
   const allInventoryQuery = useMemoFirebase(() => firestore ? collectionGroup(firestore, "inventory") : null, [firestore])
   const movementsQuery = useMemoFirebase(() => 
-    firestore ? query(collection(firestore, "movements"), orderBy("timestamp", "desc"), limit(8)) : null, 
+    firestore ? query(collection(firestore, "movements"), limit(30)) : null, 
     [firestore]
   )
   
   const { data: products, isLoading: loadingProducts } = useCollection(productsQuery)
   const { data: warehouses, isLoading: loadingWarehouses } = useCollection(warehousesQuery)
   const { data: allInventory } = useCollection(allInventoryQuery)
-  const { data: movements, isLoading: loadingMovements } = useCollection(movementsQuery)
+  const { data: rawMovements, isLoading: loadingMovements } = useCollection(movementsQuery)
+
+  const movements = React.useMemo(() => {
+    if (!rawMovements) return []
+    return [...rawMovements]
+      .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0))
+      .slice(0, 8)
+  }, [rawMovements])
 
   const activeWarehouseIds = React.useMemo(() => new Set(warehouses?.map(w => w.id) || []), [warehouses])
   

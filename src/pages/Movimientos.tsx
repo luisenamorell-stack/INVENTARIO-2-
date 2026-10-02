@@ -16,7 +16,8 @@ import {
   UserCheck,
   ClipboardList,
   Search,
-  AlertCircle
+  AlertCircle,
+  Image as ImageIcon
 } from "lucide-react"
 import { Button } from "@/src/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/src/components/ui/card"
@@ -434,7 +435,14 @@ export default function MovimientosPage() {
                       <SelectTrigger className="w-full bg-[#091016] border border-[#1e3848] text-white text-[11px] sm:text-xs h-10 px-3">
                         <SelectValue placeholder="Elegir producto...">
                           {products?.find(p => p.id === item.productId) ? (
-                            <div className="flex items-center truncate">
+                            <div className="flex items-center truncate gap-3">
+                              <div className="h-6 w-6 rounded bg-[#091016] border border-[#1e3848] overflow-hidden flex items-center justify-center shrink-0">
+                                {products.find(p => p.id === item.productId).imageUrl ? (
+                                  <img src={products.find(p => p.id === item.productId).imageUrl} className="h-full w-full object-cover" />
+                                ) : (
+                                  <ImageIcon className="h-3 w-3 text-gray-700" />
+                                )}
+                              </div>
                               <span className="font-mono text-[#38bdf8] mr-2 shrink-0">[{products.find(p => p.id === item.productId).sku}]</span> 
                               <span className="truncate">{products.find(p => p.id === item.productId).name}</span>
                             </div>
@@ -448,7 +456,17 @@ export default function MovimientosPage() {
                               <SelectLabel className="bg-[#0e1a24] text-[9px] font-bold uppercase text-[#00a896] tracking-widest p-2 mb-1">{category}</SelectLabel>
                               {prods.map((p: any) => (
                                 <SelectItem key={p.id} value={p.id} className="hover:bg-[#1e3240] focus:bg-[#1e3240] text-xs">
-                                  <span className="font-mono text-[#38bdf8] mr-2">[{p.sku}]</span> {p.name}
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-6 w-6 rounded bg-[#091016] border border-[#1e3848] overflow-hidden flex items-center justify-center shrink-0">
+                                      {p.imageUrl ? (
+                                        <img src={p.imageUrl} className="h-full w-full object-cover" />
+                                      ) : (
+                                        <ImageIcon className="h-3 w-3 text-gray-700" />
+                                      )}
+                                    </div>
+                                    <span className="font-mono text-[#38bdf8] mr-2 shrink-0">[{p.sku}]</span> 
+                                    <span className="truncate">{p.name}</span>
+                                  </div>
                                 </SelectItem>
                               ))}
                             </SelectGroup>

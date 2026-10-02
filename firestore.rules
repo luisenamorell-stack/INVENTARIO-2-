@@ -26,7 +26,8 @@ service cloud.firestore {
              data.sku is string && data.sku.size() <= 50 &&
              data.name is string && data.name.size() <= 200 &&
              data.category is string && data.category.size() <= 100 &&
-             data.costPrice is number;
+             data.costPrice is number &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 2048));
     }
 
     // 3. Warehouses

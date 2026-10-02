@@ -7,7 +7,7 @@ import {
   CollectionReference,
   SetOptions
 } from 'firebase/firestore';
-import { auth } from './index';
+import { auth } from './core';
 
 export enum OperationType {
   CREATE = 'create',
@@ -53,7 +53,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     path
   };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  // Not throwing in non-blocking to avoid interrupting flow, but logging the required JSON
+  // Not throwing to avoid blocking the UI loading state, but logging the required JSON for AI Studio
 }
 
 export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options?: SetOptions) {
